@@ -108,6 +108,12 @@ if [ "$SKIP_ENV_GEN" != "true" ]; then
   read -p "Введите имя базы данных [plgames]: " DB_NAME
   DB_NAME=${DB_NAME:-plgames}
 
+  echo ""
+  echo -e "${YELLOW}Настройка авторизации через Яндекс (OIDC)${NC}"
+  echo -e "Если вы не хотите настраивать сейчас, просто нажмите Enter."
+  read -p "Введите Yandex Client ID: " OIDC_CLIENT_ID
+  read -p "Введите Yandex Client Secret: " OIDC_CLIENT_SECRET
+
   if [ "$DOMAIN" = "localhost" ]; then
     BASE_URL="http://localhost:8080"
   else
@@ -120,6 +126,8 @@ BASE_URL=$BASE_URL
 DB_USER=$DB_USER
 DB_PASSWORD=$DB_PASSWORD
 DB_NAME=$DB_NAME
+OIDC_CLIENT_ID=$OIDC_CLIENT_ID
+OIDC_CLIENT_SECRET=$OIDC_CLIENT_SECRET
 EOF
   echo -e "${GREEN}Файл .env успешно создан.${NC}"
 fi
