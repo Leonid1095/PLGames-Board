@@ -114,6 +114,13 @@ if [ "$SKIP_ENV_GEN" != "true" ]; then
   read -p "Введите Yandex Client ID: " OIDC_CLIENT_ID
   read -p "Введите Yandex Client Secret: " OIDC_CLIENT_SECRET
 
+  echo ""
+  echo -e "${YELLOW}Настройка AI (OpenRouter)${NC}"
+  echo -e "Позволяет использовать любые модели (GPT-4, Claude, Llama) через единый API."
+  read -p "Введите OpenRouter API Key: " OPENROUTER_API_KEY
+  read -p "Введите модель по умолчанию [openai/gpt-4o-mini]: " OPENROUTER_MODEL
+  OPENROUTER_MODEL=${OPENROUTER_MODEL:-openai/gpt-4o-mini}
+
   if [ "$DOMAIN" = "localhost" ]; then
     BASE_URL="http://localhost:8080"
   else
@@ -128,6 +135,8 @@ DB_PASSWORD=$DB_PASSWORD
 DB_NAME=$DB_NAME
 OIDC_CLIENT_ID=$OIDC_CLIENT_ID
 OIDC_CLIENT_SECRET=$OIDC_CLIENT_SECRET
+OPENROUTER_API_KEY=$OPENROUTER_API_KEY
+OPENROUTER_MODEL=$OPENROUTER_MODEL
 EOF
   echo -e "${GREEN}Файл .env успешно создан.${NC}"
 fi
