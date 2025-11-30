@@ -19,29 +19,6 @@ services:
       # OpenRouter AI
       AFFINE_COPILOT_ENABLED: true
       AFFINE_COPILOT_OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
-      AFFINE_COPILOT_OPENROUTER_MODEL: ${OPENROUTER_MODEL}
-    depends_on:
-      - postgres
-      - redis
-    ports:
-      - "3010:3010"
-    volumes:
-      - storage_data:/root/.affine/storage
-
-  frontend:
-    build:
-      context: ./plgames
-      dockerfile: packages/frontend/apps/web/Dockerfile
-    restart: always
-    ports:
-      - "8080:80"
-    depends_on:
-      - backend
-
-  postgres:
-    image: pgvector/pgvector:pg16
-    restart: always
-    environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
