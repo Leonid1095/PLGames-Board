@@ -1,6 +1,6 @@
-# PLGames - Open Source CRM & Project Management
+# PLGames Board - Open Source CRM & Project Management System
 
-**PLGames** is a powerful, self-hosted CRM and project management platform built on top of AFFiNE. Perfect for teams in Russia and worldwide.
+**PLGames Board** is a powerful, self-hosted CRM and project management information system. Perfect for teams in Russia and worldwide.
 
 ## ✨ Features
 
@@ -12,12 +12,14 @@
 - **Comments & Collaboration**: Real-time team collaboration
 - **GraphQL API**: Modern API for integrations
 
-### 🚀 Additional Features (from AFFiNE)
+### 🚀 Advanced Features
 - **Real-time Collaboration**: Work together in real-time
 - **Rich Text Editor**: Powerful document editing
-- **AI Assistant**: AI-powered content generation (optional)
+- **AI Assistant**: AI-powered content generation via OpenRouter (GPT-4, Claude, Llama)
 - **OAuth Authentication**: Yandex OAuth support for Russia
 - **Self-hosted**: Full control of your data
+- **Notifications**: In-app notification system
+- **Cron Jobs**: Scheduled tasks and automation
 
 ## 🇷🇺 Russia-Friendly
 
@@ -252,16 +254,18 @@ MIT License - Free for commercial and personal use.
 - **Issues**: [GitHub Issues](https://github.com/your-username/boards_plane/issues)
 - **Email**: support@your-domain.com
 
-## 🙏 Credits
+## 🏗️ Technology Stack
 
-Built on top of:
-- [AFFiNE](https://affine.pro/) - The open-source workspace
+**PLGames Board** is built with modern technologies:
 - [NestJS](https://nestjs.com/) - Progressive Node.js framework
 - [Prisma](https://www.prisma.io/) - Next-generation ORM
 - [GraphQL](https://graphql.org/) - Query language for APIs
+- [PostgreSQL](https://www.postgresql.org/) - Reliable database
+- [Redis](https://redis.io/) - High-performance caching
+- [Docker](https://www.docker.com/) - Containerization
 
 ---
 
 **Made with ❤️ for teams in Russia and worldwide**
 
-*Deploy your own CRM in minutes, not days!*
+*PLGames Board - Your complete project management solution!*
