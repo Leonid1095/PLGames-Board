@@ -108,13 +108,20 @@ OIDC_CLIENT_SECRET=your_client_secret
 
 Create OAuth app at [Yandex OAuth](https://oauth.yandex.ru/client/new)
 
-## 📊 Access
+## 📊 Доступ к системе
 
-After successful deployment:
+**Если используете IP адрес:**
+- Frontend: `http://your-server-ip:8080`
+- Backend API: `http://your-server-ip:3010/api`
+- GraphQL: `http://your-server-ip:3010/graphql`
 
-- **Frontend**: http://your-server-ip:8080 or https://your-domain.com
-- **Backend API**: http://your-server-ip:3010/api
-- **GraphQL**: http://your-server-ip:3010/graphql
+**Если используете домен (после настройки Nginx/Caddy):**
+- Frontend: `https://your-domain.com` (порт 443)
+- Backend API: `https://api.your-domain.com` (порт 443)
+- GraphQL: `https://api.your-domain.com/graphql` (порт 443)
+
+⚠️ **Важно:** Домены работают через стандартные порты 80/443.
+Для доступа к портам 3010/8080 используйте IP адрес!
 
 ## 🛠️ Команды управления
 
