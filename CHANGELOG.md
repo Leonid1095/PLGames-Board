@@ -4,6 +4,12 @@ All notable changes to PLGames Board project.
 
 ## [Unreleased]
 
+### Changed - Documentation Simplification 📚
+- **REMOVED** 10 старых файлов документации (AI_DEPLOYMENT_GUIDE, DEPLOYMENT_TROUBLESHOOTING, QUICK_FIX_FOR_AI и др.)
+- **CREATED** один файл INSTALL.md - полная инструкция от А до Я
+- **UPDATED** README.md - теперь ссылается только на INSTALL.md
+- Упрощена структура проекта - легче разобраться новичкам
+
 ### Added - One-Command Installation 🚀
 - **install.sh** - Умный установщик с автоматической настройкой (1 команда!)
   - Автоматическая установка Docker

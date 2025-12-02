@@ -80,7 +80,7 @@ docker compose up -d
 docker compose exec backend npx prisma migrate deploy
 ```
 
-**Детальная инструкция на русском:** [INSTALL_RU.md](INSTALL_RU.md)
+**📖 Полная инструкция:** [INSTALL.md](INSTALL.md) - подробная установка с нуля
 
 ## 🔧 Configuration
 
@@ -278,31 +278,16 @@ MIT License - Free for commercial and personal use.
 
 ## 📚 Documentation
 
-### For Users:
-- **[INSTALL_RU.md](INSTALL_RU.md)** - Complete installation guide (Russian)
-- **[QUICK_START_GUIDE.md](QUICK_START_GUIDE.md)** - 5-minute quick start guide
-- **[FEATURES_ANALYSIS.md](FEATURES_ANALYSIS.md)** - Detailed features breakdown
-
-### For Developers:
-- **[ROADMAP.md](ROADMAP.md)** - Development roadmap (v1.0 → v4.0)
-- **[PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)** - Project overview
-- **[CHANGELOG.md](CHANGELOG.md)** - Release history
-
-### For AI Assistants:
-- **[AI_DEPLOYMENT_GUIDE.md](AI_DEPLOYMENT_GUIDE.md)** - Step-by-step deployment guide
-- **[QUICK_FIX_FOR_AI.md](QUICK_FIX_FOR_AI.md)** - Rapid troubleshooting (10 min)
-- **[DEPLOYMENT_TROUBLESHOOTING.md](DEPLOYMENT_TROUBLESHOOTING.md)** - Comprehensive troubleshooting
-- **[DEPLOYMENT_FIX.md](DEPLOYMENT_FIX.md)** - Alternative deployment options
-
-### Quality & Testing:
-- **[PROJECT_QUALITY_REPORT.md](PROJECT_QUALITY_REPORT.md)** - Quality analysis & checklist
-- **[DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)** - Pre-deployment verification
+- **[INSTALL.md](INSTALL.md)** - Полная инструкция по установке (с нуля до работающей системы)
+- **[FEATURES_ANALYSIS.md](FEATURES_ANALYSIS.md)** - Детальный анализ возможностей
+- **[ROADMAP.md](ROADMAP.md)** - План развития проекта (v1.0 → v4.0)
+- **[PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)** - Обзор проекта
+- **[CHANGELOG.md](CHANGELOG.md)** - История изменений
 
 ## 🆘 Support
 
-- **Documentation**: See guides above
+- **Documentation**: [INSTALL.md](INSTALL.md) - полная инструкция с решением проблем
 - **Issues**: [GitHub Issues](https://github.com/Leonid1095/boards_plane/issues)
-- **Troubleshooting**: Check [DEPLOYMENT_TROUBLESHOOTING.md](DEPLOYMENT_TROUBLESHOOTING.md) first
 
 ## 🏗️ Technology Stack
 
