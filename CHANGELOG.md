@@ -24,6 +24,7 @@ All notable changes to PLGames Board project.
 - Added ROADMAP.md with development plan v1.0 → v4.0.0 (through 2026)
 - Added PROJECT_QUALITY_REPORT.md - comprehensive project quality analysis and error prevention guide
 - Added DEPLOYMENT_TROUBLESHOOTING.md - step-by-step guide for fixing deployment issues (502 errors, backend not starting, migration failures)
+- Added QUICK_FIX_FOR_AI.md - rapid troubleshooting guide for AI assistants on production servers (10-minute fix)
 
 ## [1.0.0] - 2024-12-01
 
