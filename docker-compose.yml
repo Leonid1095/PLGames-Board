@@ -1,0 +1,104 @@
+# PLGames Board - Universal Docker Compose
+# Работает для любого окружения (development и production)
+
+services:
+  backend:
+    build:
+      context: ./plgames
+      dockerfile: Dockerfile.plgames
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      DATABASE_URL: postgres://${DB_USER:-plgames}:${DB_PASSWORD:-changeme}@postgres:5432/${DB_NAME:-plgames}
+      REDIS_SERVER_HOST: redis
+      AFFINE_SERVER_EXTERNAL_URL: ${BASE_URL:-http://localhost:3010}
+      AFFINE_SERVER_HOST: ${DOMAIN:-localhost}
+      AFFINE_SERVER_PORT: 3010
+      # AI (OpenRouter)
+      AFFINE_COPILOT_ENABLED: ${AFFINE_COPILOT_ENABLED:-false}
+      AFFINE_COPILOT_OPENROUTER_API_KEY: ${AFFINE_COPILOT_OPENROUTER_API_KEY:-}
+      AFFINE_COPILOT_OPENROUTER_MODEL: ${AFFINE_COPILOT_OPENROUTER_MODEL:-meta-llama/llama-3.1-70b-instruct}
+      # OAuth (Yandex)
+      AFFINE_OAUTH_OIDC_ISSUER: ${AFFINE_OAUTH_OIDC_ISSUER:-https://oauth.yandex.ru}
+      AFFINE_OAUTH_OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      AFFINE_OAUTH_OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      AFFINE_OAUTH_OIDC_ARGS_SCOPE: ${AFFINE_OAUTH_OIDC_ARGS_SCOPE:-openid}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "${BACKEND_PORT:-3010}:3010"
+    volumes:
+      - storage_data:/root/.affine/storage
+    networks:
+      - plgames-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3010/api/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  frontend:
+    build:
+      context: ./plgames
+      dockerfile: packages/frontend/apps/web/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - plgames-network
+    environment:
+      BACKEND_URL: http://backend:3010
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-plgames}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      POSTGRES_DB: ${DB_NAME:-plgames}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-plgames} -d ${DB_NAME:-plgames}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - plgames-network
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - plgames-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  storage_data:
+    driver: local
+
+networks:
+  plgames-network:
+    driver: bridge

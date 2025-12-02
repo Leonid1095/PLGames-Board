@@ -30,35 +30,57 @@ This project is optimized for deployment in Russia:
 - ✅ Yandex OAuth integration
 - ✅ Russian documentation included
 
-## 📦 Quick Start
+## 🚀 Установка за 1 команду
 
-### Prerequisites
-- Ubuntu 20.04+ / Debian 11+ server
-- 4GB RAM minimum (8GB recommended)
-- 20GB disk space
-- External IP address
-- Domain name (optional but recommended)
-
-### One-Click Installation
+### Автоматическая установка (рекомендуется):
 
 ```bash
-# Clone repository
-git clone https://github.com/your-username/boards_plane.git
-cd boards_plane
-
-# Update submodules
-git submodule update --init --recursive
-
-# Set your domain (optional)
-export DOMAIN=your-domain.com
-
-# Run deployment script
-sudo ./deploy_production.sh
+curl -fsSL https://raw.githubusercontent.com/Leonid1095/boards_plane/main/install.sh | sudo bash
 ```
 
-**Installation time**: 15-30 minutes
+Или через wget:
+```bash
+wget -qO- https://raw.githubusercontent.com/Leonid1095/boards_plane/main/install.sh | sudo bash
+```
 
-For detailed instructions in Russian, see [INSTALL_RU.md](INSTALL_RU.md)
+**Что делает скрипт:**
+- ✅ Проверяет систему (Ubuntu/Debian)
+- ✅ Устанавливает Docker автоматически
+- ✅ Скачивает проект
+- ✅ Настраивает конфигурацию (интерактивно)
+- ✅ Собирает и запускает все сервисы
+- ✅ Выполняет миграции базы данных
+- ✅ Проверяет работоспособность
+
+**Время установки:** 15-20 минут
+
+**Требования:**
+- Ubuntu 20.04+ / Debian 11+
+- 4GB RAM (рекомендуется 8GB)
+- 20GB свободного места
+- Root или sudo права
+
+---
+
+### Ручная установка:
+
+```bash
+# 1. Клонировать репозиторий
+git clone --recurse-submodules https://github.com/Leonid1095/boards_plane.git
+cd boards_plane
+
+# 2. Создать .env файл
+cp .env.example .env
+nano .env  # Отредактировать переменные
+
+# 3. Запустить
+docker compose up -d
+
+# 4. Выполнить миграции
+docker compose exec backend npx prisma migrate deploy
+```
+
+**Детальная инструкция на русском:** [INSTALL_RU.md](INSTALL_RU.md)
 
 ## 🔧 Configuration
 
@@ -94,23 +116,29 @@ After successful deployment:
 - **Backend API**: http://your-server-ip:3010/api
 - **GraphQL**: http://your-server-ip:3010/graphql
 
-## 🛠️ Management Commands
+## 🛠️ Команды управления
 
 ```bash
-# View logs
-docker compose -f docker-compose.prod.yml logs -f
+# Статус сервисов
+docker compose ps
 
-# Restart services
-docker compose -f docker-compose.prod.yml restart
+# Логи (все сервисы)
+docker compose logs -f
 
-# Stop services
-docker compose -f docker-compose.prod.yml down
+# Логи backend
+docker compose logs -f backend
 
-# Update system
-./deploy_production.sh
+# Перезапуск
+docker compose restart
 
-# Backup database
-docker compose -f docker-compose.prod.yml exec postgres pg_dump -U plgames plgames > backup.sql
+# Остановка
+docker compose down
+
+# Обновление
+git pull && docker compose up -d --build
+
+# Резервная копия БД
+docker compose exec postgres pg_dump -U plgames plgames > backup_$(date +%Y%m%d).sql
 ```
 
 ## 🏗️ Architecture
