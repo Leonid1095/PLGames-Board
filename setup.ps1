@@ -34,8 +34,11 @@ docker compose -f docker-compose.prod.yml up -d --build
 Write-Host "=========================================" -ForegroundColor Green
 Write-Host "   Установка успешно завершена! 🚀" -ForegroundColor Green
 Write-Host "=========================================" -ForegroundColor Green
-Write-Host "Фронтенд доступен по адресу: http://${DOMAIN}:8080"
-Write-Host "Бэкенд API доступен по адресу: http://${DOMAIN}:3010"
+# Получаем IP адрес (для Windows нужна другая команда)
+$SERVER_IP = (Invoke-WebRequest -Uri "https://ifconfig.me" -UseBasicParsing).Content.Trim()
+Write-Host "Фронтенд доступен по адресу: http://${SERVER_IP}:8080"
+Write-Host "Бэкенд API доступен по адресу: http://${SERVER_IP}:3010"
+Write-Host "⚠️  Для доступа через домен ($DOMAIN) настройте Nginx/Caddy (см. INSTALL.md)" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "Полезные команды:" -ForegroundColor Yellow
 Write-Host "  Просмотр логов: docker compose -f docker-compose.prod.yml logs -f"

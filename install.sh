@@ -230,8 +230,9 @@ EOF
   PLGames Board - Данные для входа
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-URL: $BASE_URL
-URL Backend: http://$DOMAIN:3010
+URL Frontend: $BASE_URL
+URL Backend API: http://$SERVER_IP:3010
+URL GraphQL: http://$SERVER_IP:3010/graphql
 
 База данных:
   Host: localhost:5432

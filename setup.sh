@@ -152,8 +152,11 @@ if docker compose -f docker-compose.prod.yml up -d --build; then
     echo -e "${GREEN}=========================================${NC}"
     echo -e "${GREEN}   Установка успешно завершена! 🚀${NC}"
     echo -e "${GREEN}=========================================${NC}"
-    echo -e "Фронтенд доступен по адресу: ${CYAN}http://${DOMAIN}:8080${NC} (или https://${DOMAIN}, если настроен прокси)"
-    echo -e "Бэкенд API доступен по адресу: ${CYAN}http://${DOMAIN}:3010${NC}"
+    # Получаем IP адрес сервера
+    SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
+    echo -e "Фронтенд доступен по адресу: ${CYAN}http://${SERVER_IP}:8080${NC}"
+    echo -e "Бэкенд API доступен по адресу: ${CYAN}http://${SERVER_IP}:3010${NC}"
+    echo -e "${YELLOW}⚠️  Для доступа через домен ($DOMAIN) настройте Nginx/Caddy (см. INSTALL.md)${NC}"
     echo ""
     echo -e "${YELLOW}Полезные команды:${NC}"
     echo "  Просмотр логов: docker compose -f docker-compose.prod.yml logs -f"
