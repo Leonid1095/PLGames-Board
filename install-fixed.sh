@@ -66,7 +66,14 @@ check_disk_space() {
 
 # Проверка существующей установки
 check_existing_installation() {
-    INSTALL_DIR=${INSTALL_DIR:-/opt/plgames}
+    # Если переменная не задана, пытаемся определить автоматически
+    if [ -z "$INSTALL_DIR" ]; then
+        if [ -d ".git" ]; then
+            INSTALL_DIR=$(pwd)
+        else
+            INSTALL_DIR="/opt/plgames"
+        fi
+    fi
 
     if [ -d "$INSTALL_DIR" ]; then
         warning "Директория $INSTALL_DIR уже существует"
