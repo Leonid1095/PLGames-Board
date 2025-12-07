@@ -43,8 +43,7 @@ RUN corepack enable
 
 # Prisma environment variables
 ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
-ENV PRISMA_CLI_BINARY_TARGETS=native,debian-openssl-3.0.x
-ENV PRISMA_QUERY_ENGINE_BINARY=debian-openssl-3.0.x
+ENV PRISMA_CLI_BINARY_TARGETS=debian-openssl-3.0.x
 ENV PRISMA_ENGINES_MIRROR=https://binaries.prisma.sh
 
 COPY . .
@@ -56,7 +55,7 @@ RUN echo "⏳ Установка зависимостей (2800+ пакетов,
 
 # Build frontend
 RUN echo "⏳ Сборка frontend (5-10 минут)..." && \
-    yarn plgames @affine/web build && \
+    yarn plgames build -p @affine/web && \
     echo "✓ Frontend собран"
 
 FROM caddy:2-alpine AS runner

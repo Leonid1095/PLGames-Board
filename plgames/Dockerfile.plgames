@@ -48,8 +48,7 @@ RUN corepack enable
 
 # Set Prisma environment variables for binary compatibility
 ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
-ENV PRISMA_CLI_BINARY_TARGETS=native,debian-openssl-3.0.x
-ENV PRISMA_QUERY_ENGINE_BINARY=debian-openssl-3.0.x
+ENV PRISMA_CLI_BINARY_TARGETS=debian-openssl-3.0.x
 ENV PRISMA_ENGINES_MIRROR=https://binaries.prisma.sh
 
 # Copy dependency files first for better caching
@@ -61,6 +60,7 @@ COPY packages ./packages
 COPY tools ./tools
 COPY scripts ./scripts
 COPY blocksuite ./blocksuite
+COPY docs ./docs
 
 # Copy all other files
 COPY . .
@@ -75,7 +75,12 @@ RUN echo "⏳ Генерация Prisma клиента..." && \
     cd packages/backend/server && npx prisma generate || true && \
     echo "✓ Prisma готов"
 
-# Build the PLGames project
+# Build @affine/reader first (required by backend)
+RUN echo "⏳ Сборка @affine/reader..." && \
+    yarn plgames build -p @affine/reader && \
+    echo "✓ @affine/reader собран"
+
+# Build the PLGames backend
 RUN echo "⏳ Сборка backend (5-10 минут)..." && \
     yarn plgames build -p server && \
     echo "✓ Backend собран"
