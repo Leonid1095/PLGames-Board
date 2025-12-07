@@ -255,16 +255,19 @@ else
     docker compose down 2>/dev/null || true
 fi
 
-info "Сборка образов (10-20 минут)..."
+info "Сборка образов (20-30 минут)..."
+echo ""
+warning "Некоторые этапы (Rust, установка зависимостей) могут занять 5-10 минут без видимого прогресса"
+info "Следите за сообщениями ⏳ и ✓ в выводе ниже"
 echo ""
 
 # Сборка с логированием
 # При обновлении используем кэш для ускорения, при установке - без кэша
 if [ "$MODE" = "use_existing" ]; then
     info "Используется кэш Docker для ускорения сборки..."
-    docker compose build 2>&1 | tee /tmp/plgames-build.log
+    docker compose build --progress=plain 2>&1 | tee /tmp/plgames-build.log
 else
-    docker compose build --no-cache 2>&1 | tee /tmp/plgames-build.log
+    docker compose build --no-cache --progress=plain 2>&1 | tee /tmp/plgames-build.log
 fi
 
 if [ ${PIPESTATUS[0]} -eq 0 ]; then

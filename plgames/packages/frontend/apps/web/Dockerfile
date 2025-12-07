@@ -20,7 +20,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Rust for native modules
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+RUN echo "⏳ Установка Rust (это займет 5-10 минут, пожалуйста подождите)..." && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    echo "✓ Rust установлен"
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN corepack enable
@@ -34,10 +36,14 @@ ENV PRISMA_ENGINES_MIRROR=https://binaries.prisma.sh
 COPY . .
 
 # Install dependencies WITHOUT running postinstall (skip init & husky in Docker)
-RUN yarn install --immutable --mode=skip-build 2>/dev/null || yarn install --ignore-scripts
+RUN echo "⏳ Установка зависимостей (2800+ пакетов, 10-15 минут)..." && \
+    (yarn install --immutable --mode=skip-build 2>/dev/null || yarn install --ignore-scripts) && \
+    echo "✓ Зависимости установлены"
 
 # Build frontend
-RUN yarn plgames @affine/web build
+RUN echo "⏳ Сборка frontend (5-10 минут)..." && \
+    yarn plgames @affine/web build && \
+    echo "✓ Frontend собран"
 
 FROM caddy:2-alpine AS runner
 

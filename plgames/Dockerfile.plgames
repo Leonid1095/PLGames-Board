@@ -24,7 +24,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Rust for native modules that require it
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+RUN echo "⏳ Установка Rust (это займет 5-10 минут, пожалуйста подождите)..." && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    echo "✓ Rust установлен"
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Enable corepack for Yarn
@@ -50,13 +52,19 @@ COPY blocksuite ./blocksuite
 COPY . .
 
 # Install dependencies WITHOUT running postinstall (skip init & husky in Docker)
-RUN yarn install --immutable --mode=skip-build 2>/dev/null || yarn install --ignore-scripts
+RUN echo "⏳ Установка зависимостей (2800+ пакетов, 10-15 минут)..." && \
+    (yarn install --immutable --mode=skip-build 2>/dev/null || yarn install --ignore-scripts) && \
+    echo "✓ Зависимости установлены"
 
 # Manually run Prisma generate (needed for backend)
-RUN cd packages/backend/server && npx prisma generate || true
+RUN echo "⏳ Генерация Prisma клиента..." && \
+    cd packages/backend/server && npx prisma generate || true && \
+    echo "✓ Prisma готов"
 
 # Build the PLGames project
-RUN yarn plgames build -p server
+RUN echo "⏳ Сборка backend (5-10 минут)..." && \
+    yarn plgames build -p server && \
+    echo "✓ Backend собран"
 
 FROM node:22-bookworm-slim
 
