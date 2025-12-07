@@ -132,7 +132,8 @@ fi
 success "Код готов: $INSTALL_DIR"
 
 # Конфигурация
-if [ ! -f .env ] || [ "$MODE" = "install" ]; then
+if [ ! -f .env ]; then
+    # Файла .env нет - создаём новый с вопросами
     info "Настройка конфигурации..."
 
     SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
@@ -152,7 +153,18 @@ if [ ! -f .env ] || [ "$MODE" = "install" ]; then
     read -p "Порт backend [3010]: " BACKEND_PORT
     BACKEND_PORT=${BACKEND_PORT:-3010}
 
-    DB_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-25)
+    read -p "Имя БД [plgames]: " DB_NAME
+    DB_NAME=${DB_NAME:-plgames}
+
+    read -p "Пользователь БД [plgames]: " DB_USER
+    DB_USER=${DB_USER:-plgames}
+
+    # Генерируем случайный пароль или просим ввести свой
+    RANDOM_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-25)
+    echo ""
+    echo "Пароль БД (оставьте пустым для автогенерации):"
+    read -p "Пароль БД [$RANDOM_PASSWORD]: " DB_PASSWORD
+    DB_PASSWORD=${DB_PASSWORD:-$RANDOM_PASSWORD}
 
     cat > .env << EOF
 # PLGames Configuration ($(date))
@@ -163,9 +175,9 @@ FRONTEND_PORT=$FRONTEND_PORT
 BACKEND_PORT=$BACKEND_PORT
 
 # Database
-DB_USER=plgames
+DB_USER=$DB_USER
 DB_PASSWORD=$DB_PASSWORD
-DB_NAME=plgames
+DB_NAME=$DB_NAME
 POSTGRES_PORT=5432
 
 # AI (опционально)
@@ -175,9 +187,23 @@ EOF
 
     chmod 600 .env
     success "Конфигурация создана (.env)"
-    info "Пароль БД: $DB_PASSWORD"
+    echo ""
+    info "Ваши настройки:"
+    echo "  Домен: $DOMAIN"
+    echo "  Frontend: http://${DOMAIN}:${FRONTEND_PORT}"
+    echo "  Backend: http://${DOMAIN}:${BACKEND_PORT}"
+    echo "  БД: $DB_USER@$DB_NAME"
+    echo "  Пароль БД: $DB_PASSWORD"
+    echo ""
 else
+    # Файл .env уже есть - загружаем из него
+    source .env
     warning "Используется существующий .env"
+    info "Текущие настройки:"
+    echo "  Домен: ${DOMAIN:-не указан}"
+    echo "  Frontend порт: ${FRONTEND_PORT:-не указан}"
+    echo "  Backend порт: ${BACKEND_PORT:-не указан}"
+    echo ""
 fi
 
 # Сборка и запуск
