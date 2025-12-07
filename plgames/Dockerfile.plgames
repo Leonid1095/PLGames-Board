@@ -60,9 +60,8 @@ COPY packages ./packages
 COPY tools ./tools
 COPY scripts ./scripts
 COPY blocksuite ./blocksuite
-COPY docs ./docs
 
-# Copy all other files
+# Copy all other files (includes docs, tests, etc.)
 COPY . .
 
 # Install dependencies WITHOUT running postinstall (skip init & husky in Docker)
