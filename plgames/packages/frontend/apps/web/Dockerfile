@@ -51,7 +51,7 @@ COPY . .
 
 # Install dependencies WITHOUT running postinstall (skip init & husky in Docker)
 RUN echo "⏳ Установка зависимостей (2800+ пакетов, 10-15 минут)..." && \
-    (yarn install --immutable --mode=skip-build 2>/dev/null || yarn install --ignore-scripts) && \
+    yarn install --mode=skip-build && \
     echo "✓ Зависимости установлены"
 
 # Build frontend
