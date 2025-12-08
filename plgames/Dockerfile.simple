@@ -1,0 +1,29 @@
+# Simple runtime-only Dockerfile for PLGames Backend
+# Build должен происходить снаружи или на CI/CD
+FROM node:22-bookworm-slim
+
+WORKDIR /app
+
+# Install runtime dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    openssl \
+    libjemalloc2 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Enable jemalloc
+ENV LD_PRELOAD=libjemalloc.so.2
+
+# Copy pre-built backend
+COPY packages/backend/server /app
+
+# Copy node_modules (must be prepared outside)
+# COPY node_modules ./node_modules
+
+EXPOSE 3010
+
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=60s \
+  CMD curl -f http://localhost:3010/api/healthz || exit 1
+
+CMD ["node", "./dist/main.js"]

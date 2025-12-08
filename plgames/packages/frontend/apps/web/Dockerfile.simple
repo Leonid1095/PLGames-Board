@@ -1,0 +1,12 @@
+# Simple runtime-only Dockerfile for PLGames Frontend
+# Build должен происходить снаружи или на CI/CD
+FROM caddy:2-alpine
+
+# Copy pre-built frontend dist
+COPY packages/frontend/apps/web/dist /usr/share/caddy
+COPY packages/frontend/apps/web/package.json /usr/share/caddy/package.json
+COPY packages/frontend/apps/web/Caddyfile /etc/caddy/Caddyfile
+
+EXPOSE 80
+
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
