@@ -53,7 +53,13 @@ ENV GITHUB_SHA=${GITHUB_SHA}
 
 COPY . .
 
+# Install dependencies WITHOUT running postinstall (skip init & husky in Docker)
+RUN echo "⏳ Установка зависимостей (2800+ пакетов, 10-15 минут)..." && \
+    yarn install --mode=skip-build && \
+    echo "✓ Зависимости установлены"
+
 # Create docs/reference/package.json if missing (excluded by .dockerignore)
+# Do this AFTER yarn install to avoid conflicts
 RUN mkdir -p /app/docs/reference && \
     echo '{"name":"@affine/docs","version":"0.0.0","private":true}' > /app/docs/reference/package.json
 
@@ -63,11 +69,6 @@ RUN git init && \
     git config user.name "Docker Build" && \
     git add -A && \
     git commit -m "Docker build" --allow-empty || true
-
-# Install dependencies WITHOUT running postinstall (skip init & husky in Docker)
-RUN echo "⏳ Установка зависимостей (2800+ пакетов, 10-15 минут)..." && \
-    yarn install --mode=skip-build && \
-    echo "✓ Зависимости установлены"
 
 # Build frontend
 RUN echo "⏳ Сборка frontend (5-10 минут)..." && \
