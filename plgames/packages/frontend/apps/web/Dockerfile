@@ -46,7 +46,23 @@ ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 ENV PRISMA_CLI_BINARY_TARGETS=debian-openssl-3.0.x
 ENV PRISMA_ENGINES_MIRROR=https://binaries.prisma.sh
 
+# Set GITHUB_SHA to bypass git repo check in html-plugin.ts
+# The build tool tries to read git hash, but .git is excluded from Docker context
+ARG GITHUB_SHA=docker-build
+ENV GITHUB_SHA=${GITHUB_SHA}
+
 COPY . .
+
+# Create docs/reference/package.json if missing (excluded by .dockerignore)
+RUN mkdir -p /app/docs/reference && \
+    echo '{"name":"@affine/docs","version":"0.0.0","private":true}' > /app/docs/reference/package.json
+
+# Initialize a minimal git repo for tools that require it
+RUN git init && \
+    git config user.email "docker@build.local" && \
+    git config user.name "Docker Build" && \
+    git add -A && \
+    git commit -m "Docker build" --allow-empty || true
 
 # Install dependencies WITHOUT running postinstall (skip init & husky in Docker)
 RUN echo "⏳ Установка зависимостей (2800+ пакетов, 10-15 минут)..." && \
@@ -56,7 +72,9 @@ RUN echo "⏳ Установка зависимостей (2800+ пакетов,
 # Build frontend
 RUN echo "⏳ Сборка frontend (5-10 минут)..." && \
     yarn plgames build -p @affine/web && \
-    echo "✓ Frontend собран"
+    echo "✓ Frontend собран" && \
+    ls -la /app/packages/frontend/apps/web/dist/ && \
+    echo "✓ Проверка: dist директория создана"
 
 FROM caddy:2-alpine AS runner
 
