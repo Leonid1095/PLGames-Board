@@ -23,7 +23,14 @@ echo ""
 echo "📦 Установка зависимостей (может занять 10-15 минут)..."
 # Ограничиваем потребление памяти Node.js
 export NODE_OPTIONS="--max-old-space-size=6144"
-yarn install
+
+# Устанавливаем без сборки нативных модулей (Yarn 4 синтаксис)
+yarn install --mode=skip-build
+
+echo ""
+echo "🔧 Генерация Prisma клиента..."
+# Теперь генерируем Prisma клиент отдельно
+yarn workspace @affine/server exec prisma generate || true
 
 echo ""
 echo "🔨 Сборка backend (@affine/reader + server)..."
