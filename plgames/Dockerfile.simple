@@ -22,14 +22,14 @@ COPY packages/backend/server/dist ./dist
 COPY packages/backend/server/package.json ./package.json
 COPY packages/backend/server/schema.prisma ./schema.prisma
 
-# Copy workspace dependencies (@affine/reader)
-COPY packages/common/reader/dist ./packages/common/reader/dist
-COPY packages/common/reader/package.json ./packages/common/reader/package.json
+# Copy ALL built packages that backend depends on
+COPY packages/common/reader/dist ./node_modules/@affine/reader/dist
+COPY packages/common/reader/package.json ./node_modules/@affine/reader/package.json
 
-# Copy node_modules from build stage
-COPY packages/backend/server/node_modules ./node_modules
+# Install production dependencies (will skip workspace:* and use what we copied)
+RUN npm install --production --ignore-scripts || true
 
-# Generate Prisma client (will be in node_modules/.prisma)
+# Generate Prisma client
 RUN npx prisma generate
 
 EXPOSE 3010
