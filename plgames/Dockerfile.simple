@@ -28,10 +28,9 @@ COPY packages/common/reader/package.json ./packages/common/reader/package.json
 
 # Copy node_modules from build stage
 COPY packages/backend/server/node_modules ./node_modules
-COPY node_modules/.prisma ./node_modules/.prisma
 
-# Generate Prisma client (in case it's missing)
-RUN npx prisma generate || true
+# Generate Prisma client (will be in node_modules/.prisma)
+RUN npx prisma generate
 
 EXPOSE 3010
 
