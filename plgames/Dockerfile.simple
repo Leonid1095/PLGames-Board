@@ -28,6 +28,7 @@ COPY packages/common/reader/package.json ./packages/common/reader/package.json
 
 # Install only production dependencies
 COPY package.json yarn.lock .yarnrc.yml ./
+COPY .yarn ./.yarn
 RUN corepack enable && \
     yarn workspaces focus @affine/server --production && \
     yarn cache clean
