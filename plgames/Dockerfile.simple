@@ -28,9 +28,13 @@ COPY packages/common/reader/package.json ./node_modules/@affine/reader/package.j
 # Create minimal package.json for runtime (without workspace:* dependencies)
 RUN echo '{"name":"@affine/server","version":"0.25.2","type":"module","dependencies":{"reflect-metadata":"^0.2.2"}}' > package.json
 
-# Install only critical runtime dependencies
-RUN npm install reflect-metadata@0.2.2 && \
-    npm install prisma@5.22.0 @prisma/client@5.22.0 && \
+# Install only critical runtime dependencies with retries
+RUN npm install --legacy-peer-deps reflect-metadata@0.2.2 || \
+    (sleep 5 && npm install --legacy-peer-deps reflect-metadata@0.2.2)
+
+# Install Prisma with retries and generate client
+RUN npm install --legacy-peer-deps prisma@5.22.0 @prisma/client@5.22.0 || \
+    (sleep 5 && npm install --legacy-peer-deps prisma@5.22.0 @prisma/client@5.22.0) && \
     npx prisma generate && \
     npm uninstall prisma && \
     npm cache clean --force
