@@ -21,9 +21,11 @@ RUN apt-get update && \
 COPY . .
 
 # Initialize git (required by build tools)
-RUN git init && \
+RUN git config --global user.email "docker@plgames.local" && \
+    git config --global user.name "Docker Build" && \
+    git init && \
     git add -A && \
-    git commit -m "Docker build" || true
+    git commit -m "Docker build"
 
 # Enable Corepack and install Yarn
 RUN corepack enable && \
