@@ -14,30 +14,16 @@
 **One-line installation** - like GitLab, Nextcloud, or official AFFiNE:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Leonid1095/boards_plane/main/install-auto.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/Leonid1095/boards_plane/main/install.sh | bash
 ```
 
 That's it! The script will:
-- ✅ Install Docker, Node.js 22, and all dependencies
 - ✅ Clone the repository
-- ✅ Configure domain/HTTPS or IP/HTTP
-- ✅ Build the entire project (20-30 minutes)
+- ✅ Build everything inside Docker (20-30 minutes)
 - ✅ Start all services automatically
-- ✅ Provide you with access URL
+- ✅ Provide you with access URL at http://localhost:8080
 
-**Requirements:** Ubuntu 20.04+, 8GB RAM, 20GB disk space
-
----
-
-## 📦 Alternative: Fast Installation (Pre-built Images)
-
-**Coming soon** - 2-3 minute installation using pre-built Docker images:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Leonid1095/boards_plane/main/install-prebuilt.sh | bash
-```
-
-**Requirements:** Any Linux with Docker, 2GB RAM, 10GB disk space
+**Requirements:** Any Linux with Docker, 8GB RAM, 20GB disk space
 
 ---
 
@@ -94,19 +80,9 @@ curl -fsSL https://raw.githubusercontent.com/Leonid1095/boards_plane/main/instal
 
 ## 📖 Documentation
 
-### For Users
-- **[INSTALL.md](INSTALL.md)** - Detailed installation guide
-- **[README-QUICKSTART.md](README-QUICKSTART.md)** - Quick start tutorial
-
-### For Developers
-- **[CHANGELOG.md](CHANGELOG.md)** - Version history and changes
-- **[ROADMAP.md](ROADMAP.md)** - Future development plans
-
-### Installation Scripts
-- **[install-auto.sh](install-auto.sh)** - Automated production installer (8GB RAM)
-- **[install-prebuilt.sh](install-prebuilt.sh)** - Fast installer with pre-built images (2GB RAM)
-- **[build.sh](build.sh)** - Optimized build script
-- **[prepare-server.sh](prepare-server.sh)** - Server preparation (swap, etc.)
+- **[install.sh](install.sh)** - One-line production installer
+- **[docker-compose.yml](docker-compose.yml)** - Docker orchestration configuration
+- **[plgames/Dockerfile](plgames/Dockerfile)** - Multi-stage build for backend and frontend
 
 ---
 
@@ -119,23 +95,19 @@ If you prefer manual control:
 git clone https://github.com/Leonid1095/boards_plane.git
 cd boards_plane
 
-# 2. Prepare server (Ubuntu 20.04+)
-sudo bash prepare-server.sh
+# 2. Start services (builds everything inside Docker)
+docker compose up -d --build
 
-# 3. Build project (requires 8GB RAM)
-bash build.sh
-
-# 4. Start services
-docker compose -f docker-compose.simple.yml up -d --build
-
-# 5. Check status
-docker compose -f docker-compose.simple.yml ps
+# 3. Check status
+docker compose ps
 ```
 
 **Access:**
 - Frontend: http://localhost:8080
 - Backend API: http://localhost:3010
 - Health check: http://localhost:3010/api/healthz
+
+**Note:** First build takes 20-30 minutes as it builds the entire monorepo inside Docker.
 
 ---
 
@@ -172,31 +144,31 @@ OIDC_CLIENT_SECRET=your-client-secret
 
 ```bash
 # Check status
-docker compose -f docker-compose.simple.yml ps
+docker compose ps
 
 # View logs
-docker compose -f docker-compose.simple.yml logs -f
+docker compose logs -f
 
 # View specific service logs
-docker compose -f docker-compose.simple.yml logs -f backend
+docker compose logs -f backend
 
 # Restart services
-docker compose -f docker-compose.simple.yml restart
+docker compose restart
 
 # Stop services
-docker compose -f docker-compose.simple.yml down
+docker compose down
 
-# Update to latest version (when using prebuilt images)
+# Update to latest version
 cd ~/plgames-board
-docker compose pull
-docker compose up -d
+git pull
+docker compose up -d --build
 
 # Backup database
-docker compose -f docker-compose.simple.yml exec postgres \
+docker compose exec postgres \
   pg_dump -U plgames plgames > backup_$(date +%Y%m%d).sql
 
 # Restore database
-cat backup.sql | docker compose -f docker-compose.simple.yml exec -T postgres \
+cat backup.sql | docker compose exec -T postgres \
   psql -U plgames plgames
 ```
 
@@ -226,20 +198,14 @@ sudo ufw allow 3010/tcp
 
 ## 📊 System Requirements
 
-### Production (Full Build)
-- **OS:** Ubuntu 20.04+ (or any Linux with Docker)
-- **RAM:** 8GB minimum (4GB SWAP auto-created)
+### Production (Docker)
+- **OS:** Any Linux with Docker
+- **RAM:** 8GB minimum (for initial build)
 - **CPU:** 2+ cores
 - **Disk:** 20GB free space
 - **Network:** Stable internet connection
 
-### Production (Pre-built Images)
-- **OS:** Any Linux with Docker
-- **RAM:** 2GB minimum
-- **CPU:** 1+ core
-- **Disk:** 10GB free space
-
-### Development
+### Development (Local)
 - **OS:** Linux, macOS, Windows (WSL2)
 - **Node.js:** 22.x
 - **Yarn:** 4.x (via corepack)
@@ -250,28 +216,24 @@ sudo ufw allow 3010/tcp
 
 ## 🚨 Troubleshooting
 
-### Installation fails with "not enough RAM"
+### Build fails with "not enough RAM"
 ```bash
 # Check RAM
 free -h
 
-# Check if swap is configured
-swapon --show
-
-# Manually run prepare-server.sh to create swap
-sudo bash prepare-server.sh
+# Docker build requires 8GB RAM
+# You may need to add swap space or use a larger server
 ```
 
 ### Backend not starting
 ```bash
 # Check logs
-docker compose -f docker-compose.simple.yml logs backend
+docker compose logs backend
 
 # Common issues:
 # 1. Database not ready - wait 30 seconds
-# 2. Prisma engines not found - rebuild:
-docker compose -f docker-compose.simple.yml build --no-cache backend
-docker compose -f docker-compose.simple.yml up -d backend
+# 2. Build failed - check build logs:
+docker compose logs backend | grep -i error
 ```
 
 ### Frontend shows "Cannot connect to backend"
@@ -280,18 +242,18 @@ docker compose -f docker-compose.simple.yml up -d backend
 curl http://localhost:3010/api/healthz
 
 # If backend is down, restart:
-docker compose -f docker-compose.simple.yml restart backend
+docker compose restart backend
 ```
 
 ### Port already in use
 ```bash
-# Change ports in .env file
-nano .env
+# Change ports in .env file (create if doesn't exist)
+echo "FRONTEND_PORT=8081" >> .env
+echo "BACKEND_PORT=3011" >> .env
 
-# Update FRONTEND_PORT and BACKEND_PORT
 # Then restart:
-docker compose -f docker-compose.simple.yml down
-docker compose -f docker-compose.simple.yml up -d
+docker compose down
+docker compose up -d
 ```
 
 ---
@@ -330,7 +292,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Issues:** [GitHub Issues](https://github.com/Leonid1095/boards_plane/issues)
 - **Discussions:** [GitHub Discussions](https://github.com/Leonid1095/boards_plane/discussions)
-- **Documentation:** [INSTALL.md](INSTALL.md)
 
 ---
 

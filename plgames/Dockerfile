@@ -71,12 +71,13 @@ ENV NODE_ENV=production
 # Copy built backend from builder
 COPY --from=builder /workspace/packages/backend/server/dist ./dist
 COPY --from=builder /workspace/packages/backend/server/schema.prisma ./schema.prisma
-COPY --from=builder /workspace/packages/backend/server/node_modules ./node_modules
+
+# Copy all node_modules from workspace root (Yarn workspaces use hoisting)
+COPY --from=builder /workspace/node_modules ./node_modules
+
+# Copy built workspace packages that backend depends on
 COPY --from=builder /workspace/packages/common/reader/dist ./node_modules/@affine/reader/dist
 COPY --from=builder /workspace/packages/common/reader/package.json ./node_modules/@affine/reader/package.json
-
-# Copy root node_modules for workspace dependencies
-COPY --from=builder /workspace/node_modules/.prisma ./node_modules/.prisma
 
 EXPOSE 3010
 
