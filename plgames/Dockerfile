@@ -31,8 +31,10 @@ RUN git config --global user.email "docker@plgames.local" && \
 RUN corepack enable && \
     corepack prepare yarn@stable --activate
 
-# Set memory limit
+# Set memory limit and parallel builds
 ENV NODE_OPTIONS="--max-old-space-size=6144"
+ENV NODE_ENV=production
+ENV CI=true
 
 # Install dependencies (skip native builds)
 RUN yarn install --mode=skip-build
@@ -47,8 +49,9 @@ RUN yarn workspace @affine/templates build
 RUN yarn workspace @affine/reader build && \
     yarn workspace @affine/server build
 
-# Build frontend
-RUN yarn plgames build -p @affine/web
+# Build frontend with timeout (max 30 minutes)
+RUN timeout 1800 yarn plgames build -p @affine/web || \
+    (echo "Frontend build timed out after 30 minutes" && exit 1)
 
 # Debug: Show what was actually built
 RUN echo "=== Checking frontend build output ===" && \
