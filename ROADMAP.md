@@ -95,9 +95,68 @@
 - [plgames/Dockerfile](plgames/Dockerfile) - Multi-stage сборка
 - [README.md](README.md) - Обновлена документация
 
+### ✅ Caddy Gateway & Domain Configuration (Commit: b9ff350e8)
+
+**Проблема:** Доступ к приложению требовал указания порта (http://domain.com:8080), что неудобно для пользователей.
+
+**Решение:** Добавлен Caddy gateway для автоматического HTTPS и маршрутизации без портов.
+
+**Реализация:**
+- Создан новый сервис `gateway` в docker-compose.yml на базе Caddy 2
+- Настроен автоматический HTTPS с Let's Encrypt для production доменов
+- HTTP режим для localhost разработки
+- Обновлен Caddyfile с умной конфигурацией `{$DOMAIN:localhost}`
+
+**Архитектура:**
+```
+Internet → Caddy Gateway (80/443) → Frontend (80) → Backend (3010)
+                                                   ↓
+                                              PostgreSQL + Redis
+```
+
+**Файлы изменены:**
+- [docker-compose.yml](docker-compose.yml) - добавлен gateway сервис
+- [Caddyfile](Caddyfile) - настройка reverse proxy и HTTPS
+- [.env.example](.env.example) - добавлены DOMAIN, HTTP_PORT, HTTPS_PORT
+- [README.md](README.md) - обновлена документация по доменам
+
+### ✅ Interactive Installation Script (Commit: 9cd506462)
+
+**Проблема:** Пользователи успешно собирали приложение, но не знали что делать дальше (нет инструкций по первому входу, настройке админа).
+
+**Решение:** Создан интерактивный install.sh с пошаговой конфигурацией и четкими инструкциями.
+
+**Функционал:**
+1. **Проверка требований** - Docker и Docker Compose
+2. **Интерактивная конфигурация:**
+   - Домен (localhost или production домен)
+   - Порты HTTP/HTTPS с умными defaults (80/443)
+   - Автогенерация безопасного пароля БД
+   - Опциональная настройка firewall (UFW/firewalld)
+3. **Summary перед установкой** - показывает все настройки
+4. **Автоматическая установка:**
+   - Клонирование репозитория
+   - Генерация .env файла
+   - Настройка firewall
+   - Docker build и запуск
+5. **Подробные Next Steps:**
+   - URL для доступа
+   - **Важно:** Инструкция что первый зарегистрировавшийся = admin
+   - Полезные команды (logs, status, restart)
+   - Ссылки на документацию
+
+**Улучшения UX:**
+- Цветной вывод с четкими секциями
+- Обработка существующей установки
+- Production-specific советы (DNS, Let's Encrypt)
+- Показывает время сборки (~20-30 минут)
+
+**Файлы изменены:**
+- [install.sh](install.sh) - интерактивный установщик
+
 #### Текущие задачи:
-- [ ] Настройка домена без номера порта (https://domain.com вместо https://domain.com:8080)
-- [ ] Автоматический HTTPS через Caddy + Let's Encrypt
+- [x] Настройка домена без номера порта (https://domain.com вместо https://domain.com:8080) ✅
+- [x] Автоматический HTTPS через Caddy + Let's Encrypt ✅
 - [ ] Удаление debug команд из Dockerfile (строки 56-61)
 
 ---
