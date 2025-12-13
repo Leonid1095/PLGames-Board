@@ -103,9 +103,12 @@ docker compose ps
 ```
 
 **Access:**
-- Frontend: http://localhost:8080
-- Backend API: http://localhost:3010
+- **Production (with domain):** https://yourdomain.com
+- **Development (localhost):** http://localhost
+- Backend API (direct): http://localhost:3010
 - Health check: http://localhost:3010/api/healthz
+
+**Note:** Frontend and backend are automatically proxied through the gateway.
 
 **Note:** First build takes 20-30 minutes as it builds the entire monorepo inside Docker.
 
@@ -113,15 +116,32 @@ docker compose ps
 
 ## ⚙️ Configuration
 
-Main configuration is in `.env` file (auto-generated during installation):
+Main configuration is in `.env` file:
+
+### Domain Configuration
+
+**For localhost (development):**
+```env
+DOMAIN=localhost
+BASE_URL=http://localhost
+HTTP_PORT=80
+HTTPS_PORT=443
+```
+Access at: http://localhost
+
+**For production domain:**
+```env
+DOMAIN=yourdomain.com
+BASE_URL=https://yourdomain.com
+HTTP_PORT=80
+HTTPS_PORT=443
+```
+Access at: https://yourdomain.com (automatic HTTPS via Let's Encrypt)
+
+### Other Configuration
 
 ```env
-# Domain/IP
-DOMAIN=your-domain.com
-BASE_URL=https://your-domain.com
-
-# Ports
-FRONTEND_PORT=443
+# Backend
 BACKEND_PORT=3010
 
 # Database (auto-generated secure password)
@@ -183,15 +203,15 @@ cat backup.sql | docker compose exec -T postgres \
 - ⚠️ **Firewall** - Remember to configure firewall rules:
 
 ```bash
-# For HTTP (port 8080)
-sudo ufw allow 8080/tcp
+# For production (HTTPS)
+sudo ufw allow 80/tcp   # HTTP (redirects to HTTPS)
+sudo ufw allow 443/tcp  # HTTPS
 
-# For HTTPS (ports 80, 443)
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
+# For development (localhost only - optional)
+# No firewall rules needed for localhost access
 
-# For direct backend access (optional, not recommended for production)
-sudo ufw allow 3010/tcp
+# For direct backend access (not recommended for production)
+# sudo ufw allow 3010/tcp
 ```
 
 ---

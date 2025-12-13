@@ -1,8 +1,14 @@
-{$DOMAIN} {
-    # Автоматический HTTPS с Let's Encrypt
+{$DOMAIN:localhost} {
+    # Автоматический HTTPS с Let's Encrypt (только для доменов, не для localhost)
+    # Для localhost используется HTTP
 
     # Проксируем всё на frontend (который уже проксирует API на backend)
-    reverse_proxy frontend:80
+    reverse_proxy frontend:80 {
+        header_up Host {host}
+        header_up X-Real-IP {remote}
+        header_up X-Forwarded-For {remote}
+        header_up X-Forwarded-Proto {scheme}
+    }
 
     # Логирование
     log {
@@ -13,9 +19,12 @@
     # Сжатие
     encode gzip
 
-    # Security headers
-    header {
-        # Enable HSTS
+    # Security headers (только для HTTPS)
+    @https {
+        protocol https
+    }
+    header @https {
+        # Enable HSTS (только для HTTPS)
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
         # Prevent clickjacking
         X-Frame-Options "SAMEORIGIN"
@@ -23,6 +32,6 @@
         X-Content-Type-Options "nosniff"
         X-XSS-Protection "1; mode=block"
         # CSP
-        Content-Security-Policy "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https:; img-src 'self' data: https: blob:; font-src 'self' data: https:;"
+        Content-Security-Policy "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https: http:; img-src 'self' data: https: http: blob:; font-src 'self' data: https: http:; connect-src 'self' https: http: ws: wss:;"
     }
 }

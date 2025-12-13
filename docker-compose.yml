@@ -48,8 +48,6 @@ services:
       dockerfile: Dockerfile
       target: frontend
     restart: unless-stopped
-    ports:
-      - "${FRONTEND_PORT:-8080}:80"
     depends_on:
       backend:
         condition: service_started
@@ -57,6 +55,24 @@ services:
       - plgames-network
     environment:
       BACKEND_URL: http://backend:3010
+
+  # Caddy gateway for HTTPS and domain routing
+  gateway:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+    networks:
+      - plgames-network
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
 
   postgres:
     image: pgvector/pgvector:pg16
@@ -99,6 +115,10 @@ volumes:
   redis_data:
     driver: local
   storage_data:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
     driver: local
 
 networks:
