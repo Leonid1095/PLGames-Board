@@ -31,10 +31,9 @@ RUN git config --global user.email "docker@plgames.local" && \
 RUN corepack enable && \
     corepack prepare yarn@stable --activate
 
-# Set memory limit and parallel builds
+# Set memory limit and production mode
 ENV NODE_OPTIONS="--max-old-space-size=6144"
 ENV NODE_ENV=production
-ENV CI=true
 
 # Install dependencies (skip native builds)
 RUN yarn install --mode=skip-build
