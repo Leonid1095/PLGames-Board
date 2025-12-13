@@ -5,7 +5,8 @@ services:
   backend:
     build:
       context: ./plgames
-      dockerfile: Dockerfile.plgames
+      dockerfile: Dockerfile
+      target: backend
     restart: unless-stopped
     environment:
       NODE_ENV: ${NODE_ENV:-production}
@@ -44,7 +45,8 @@ services:
   frontend:
     build:
       context: ./plgames
-      dockerfile: packages/frontend/apps/web/Dockerfile
+      dockerfile: Dockerfile
+      target: frontend
     restart: unless-stopped
     ports:
       - "${FRONTEND_PORT:-8080}:80"
