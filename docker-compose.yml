@@ -3,10 +3,13 @@
 
 services:
   backend:
-    build:
-      context: ./plgames
-      dockerfile: Dockerfile
-      target: backend
+    # Use pre-built image from GitHub Container Registry (recommended for Russia)
+    # Or build locally by uncommenting the 'build' section
+    image: ${BACKEND_IMAGE:-ghcr.io/leonid1095/plgames-board-backend:latest}
+    # build:
+    #   context: ./plgames
+    #   dockerfile: Dockerfile
+    #   target: backend
     restart: unless-stopped
     environment:
       NODE_ENV: ${NODE_ENV:-production}
@@ -43,10 +46,13 @@ services:
       start_period: 60s
 
   frontend:
-    build:
-      context: ./plgames
-      dockerfile: Dockerfile
-      target: frontend
+    # Use pre-built image from GitHub Container Registry (recommended for Russia)
+    # Or build locally by uncommenting the 'build' section
+    image: ${FRONTEND_IMAGE:-ghcr.io/leonid1095/plgames-board-frontend:latest}
+    # build:
+    #   context: ./plgames
+    #   dockerfile: Dockerfile
+    #   target: frontend
     restart: unless-stopped
     depends_on:
       backend:
