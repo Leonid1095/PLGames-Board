@@ -92,8 +92,10 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - plgames-network
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+    # PostgreSQL не экспонируется наружу - доступен только внутри Docker сети
+    # Если нужен внешний доступ, раскомментируйте:
+    # ports:
+    #   - "${POSTGRES_PORT:-5432}:5432"
 
   redis:
     image: redis:alpine
