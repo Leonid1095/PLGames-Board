@@ -149,19 +149,42 @@ RUN set -e; \
       ls -lh /root/.cache/prisma/$PRISMA_HASH/debian-openssl-3.0.x/; \
     fi
 
-# Generate Prisma client with offline mode (uses pre-downloaded engines)
-# Set environment to use cached engines and skip downloading
-ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
-ENV PRISMA_SKIP_DOWNLOAD=1
+# Generate Prisma client with COMPLETELY OFFLINE mode
+# Block ALL network access during generation to force using cached engines
 RUN set -e; \
-    PRISMA_GENERATED=0; \
     echo "Checking for pre-downloaded Prisma engines..."; \
-    ls -R /root/.cache/prisma/ || echo "No engines in cache yet"; \
+    ls -lR /root/.cache/prisma/ || echo "No engines in cache yet"; \
     \
+    # Check if engines were actually downloaded
+    PRISMA_HASH=$(yarn workspace @affine/server exec prisma --version 2>/dev/null | grep -oP '(?<=Prisma Engines  : )\S+' | head -1 || echo "master"); \
+    ENGINE_PATH="/root/.cache/prisma/$PRISMA_HASH/debian-openssl-3.0.x/libquery_engine-debian-openssl-3.0.x.so.node"; \
+    \
+    if [ ! -f "$ENGINE_PATH" ]; then \
+      echo ""; \
+      echo "====== CRITICAL: PRISMA ENGINE NOT FOUND ======"; \
+      echo "Expected engine at: $ENGINE_PATH"; \
+      echo "But file does not exist!"; \
+      echo ""; \
+      echo "This means the previous download step (step 9/14) failed."; \
+      echo "Check logs above for engine download errors."; \
+      echo ""; \
+      echo "Attempting to generate anyway (Prisma will try to download)..."; \
+      echo ""; \
+    else \
+      echo "✓ Found pre-downloaded engine at: $ENGINE_PATH"; \
+      ls -lh "$ENGINE_PATH"; \
+    fi; \
+    \
+    PRISMA_GENERATED=0; \
     for i in 1 2 3 4 5; do \
+      echo ""; \
       echo "Attempting Prisma generate (attempt $i/5)..."; \
-      # Run prisma generate with relaxed network requirements
-      if timeout 300 yarn workspace @affine/server exec prisma generate 2>&1; then \
+      \
+      # CRITICAL: Run with OFFLINE environment variables
+      if PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1 \
+         PRISMA_CLI_QUERY_ENGINE_TYPE=library \
+         PRISMA_QUERY_ENGINE_LIBRARY="$ENGINE_PATH" \
+         timeout 120 yarn workspace @affine/server exec prisma generate 2>&1; then \
         PRISMA_GENERATED=1 && \
         echo "✓ Prisma client generated successfully" && \
         break; \
@@ -169,15 +192,9 @@ RUN set -e; \
         EXIT_CODE=$?; \
         echo "✗ Prisma generate failed on attempt $i/5 (exit code: $EXIT_CODE)"; \
         \
-        # If engine download failed, try to work around it
-        if [ $i -eq 1 ]; then \
-          echo "Checking Prisma engines cache structure..."; \
-          find /root/.cache/prisma -type f -name "*query_engine*" 2>/dev/null || true; \
-        fi; \
-        \
         if [ $i -lt 5 ]; then \
-          echo "Retrying in 10 seconds..."; \
-          sleep 10; \
+          echo "Retrying in 5 seconds..."; \
+          sleep 5; \
         fi; \
       fi; \
     done; \
@@ -187,20 +204,25 @@ RUN set -e; \
       echo "====== PRISMA GENERATION FAILED ======"; \
       echo "ERROR: Failed to generate Prisma client after 5 attempts"; \
       echo ""; \
-      echo "This is likely due to network issues downloading Prisma engines from Russia."; \
-      echo ""; \
       echo "Diagnostic information:"; \
       echo "  - Prisma cache contents:"; \
-      ls -R /root/.cache/prisma/ || echo "    Cache is empty"; \
+      ls -lR /root/.cache/prisma/ 2>/dev/null || echo "    Cache is empty"; \
       echo ""; \
-      echo "  - Available mirrors:"; \
-      echo "    1. https://binaries.prisma.sh (official)"; \
-      echo "    2. https://github.com/nicksrandall/prisma-engines-prebuilt"; \
+      echo "  - Engine file exists:"; \
+      if [ -f "$ENGINE_PATH" ]; then \
+        echo "    YES: $ENGINE_PATH"; \
+        ls -lh "$ENGINE_PATH"; \
+      else \
+        echo "    NO: Engine was not downloaded (step 9 failed)"; \
+      fi; \
       echo ""; \
-      echo "Suggested solutions:"; \
-      echo "  1. Retry the build (network may be temporarily down)"; \
-      echo "  2. Check internet connection"; \
-      echo "  3. Try using a VPN"; \
+      echo "This means binaries.prisma.sh is blocked in Russia."; \
+      echo "Unfortunately there is no reliable mirror for Prisma engines."; \
+      echo ""; \
+      echo "Possible solutions:"; \
+      echo "  1. Use VPN to unblock binaries.prisma.sh"; \
+      echo "  2. Build on a non-Russia server and copy the image"; \
+      echo "  3. Wait and retry (network may be temporarily down)"; \
       echo ""; \
       exit 1; \
     fi; \
