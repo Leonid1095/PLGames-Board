@@ -90,61 +90,121 @@ RUN yarn install --mode=skip-build
 
 # Generate Prisma client (required for database access)
 # Using multiple mirrors for Prisma engines (Russia/China friendly)
-ENV PRISMA_ENGINES_MIRROR="https://binaries.prisma.sh"
-ENV PRISMA_CLI_BINARY_TARGETS="debian-openssl-3.0.x"
+# CRITICAL: Download engines BEFORE running prisma generate to avoid network issues
 RUN set -e; \
+    # Get Prisma version and commit hash
     PRISMA_VERSION=$(yarn workspace @affine/server exec prisma --version 2>/dev/null | grep -oP 'prisma\s*:\s*\K[\d.]+' || echo "6.8.2") && \
-    echo "Prisma version: $PRISMA_VERSION" && \
-    mkdir -p /root/.cache/prisma/master && \
+    PRISMA_HASH=$(yarn workspace @affine/server exec prisma --version 2>/dev/null | grep -oP '(?<=Prisma Engines  : )\S+' | head -1 || echo "latest") && \
+    echo "Prisma version: $PRISMA_VERSION (hash: $PRISMA_HASH)" && \
+    \
+    # Create Prisma cache directory
+    mkdir -p /root/.cache/prisma/$PRISMA_HASH/debian-openssl-3.0.x && \
     ENGINE_DOWNLOADED=0; \
-    # Try multiple sources for Prisma engines (prioritize mirrors accessible from Russia)
+    \
+    # Try multiple sources for query engine
     for URL in \
+      "https://binaries.prisma.sh/all_commits/$PRISMA_HASH/debian-openssl-3.0.x/libquery_engine.so.node.gz" \
       "https://binaries.prisma.sh/all_commits/latest/debian-openssl-3.0.x/libquery_engine.so.node.gz" \
-      "https://github.com/nicksrandall/prisma-engines-prebuilt/releases/download/latest/libquery_engine-debian-openssl-3.0.x.so.node.gz" \
-      "https://prisma-builds.s3-eu-west-1.amazonaws.com/master/latest/debian-openssl-3.0.x/libquery_engine.so.node.gz"; \
+      "https://github.com/nicksrandall/prisma-engines-prebuilt/releases/download/latest/libquery_engine-debian-openssl-3.0.x.so.node.gz"; \
     do \
-      echo "Trying to download Prisma engine from $URL..." && \
-      if curl -sSfL --connect-timeout 30 --max-time 180 --retry 2 -o /tmp/engine.gz "$URL" 2>&1; then \
-        if gunzip -c /tmp/engine.gz > /root/.cache/prisma/master/libquery_engine-debian-openssl-3.0.x.so.node 2>&1; then \
-          chmod +x /root/.cache/prisma/master/libquery_engine-debian-openssl-3.0.x.so.node && \
+      echo "Trying to download Prisma query engine from: $URL" && \
+      if curl -sSfL --connect-timeout 30 --max-time 180 --retry 2 -o /tmp/query_engine.gz "$URL" 2>&1; then \
+        if gunzip -c /tmp/query_engine.gz > /root/.cache/prisma/$PRISMA_HASH/debian-openssl-3.0.x/libquery_engine-debian-openssl-3.0.x.so.node 2>&1; then \
+          chmod +x /root/.cache/prisma/$PRISMA_HASH/debian-openssl-3.0.x/libquery_engine-debian-openssl-3.0.x.so.node && \
           ENGINE_DOWNLOADED=1 && \
-          echo "✓ Successfully downloaded Prisma engine from $URL" && \
-          rm -f /tmp/engine.gz && \
+          echo "✓ Successfully downloaded query engine from $URL" && \
+          rm -f /tmp/query_engine.gz && \
           break; \
         else \
-          echo "✗ Failed to decompress Prisma engine from $URL"; \
-          rm -f /tmp/engine.gz; \
+          echo "✗ Failed to decompress query engine"; \
+          rm -f /tmp/query_engine.gz; \
         fi; \
       else \
-        echo "✗ Failed to download from $URL, trying next mirror..."; \
-        rm -f /tmp/engine.gz; \
+        echo "✗ Failed to download from $URL"; \
+        rm -f /tmp/query_engine.gz; \
       fi; \
     done; \
+    \
+    # Also try to download schema engine (sometimes needed)
+    for URL in \
+      "https://binaries.prisma.sh/all_commits/$PRISMA_HASH/debian-openssl-3.0.x/schema-engine-debian-openssl-3.0.x.gz" \
+      "https://binaries.prisma.sh/all_commits/latest/debian-openssl-3.0.x/schema-engine-debian-openssl-3.0.x.gz"; \
+    do \
+      if curl -sSfL --connect-timeout 30 --max-time 180 --retry 2 -o /tmp/schema_engine.gz "$URL" 2>&1; then \
+        if gunzip -c /tmp/schema_engine.gz > /root/.cache/prisma/$PRISMA_HASH/debian-openssl-3.0.x/schema-engine-debian-openssl-3.0.x 2>&1; then \
+          chmod +x /root/.cache/prisma/$PRISMA_HASH/debian-openssl-3.0.x/schema-engine-debian-openssl-3.0.x && \
+          echo "✓ Downloaded schema engine" && \
+          rm -f /tmp/schema_engine.gz && \
+          break; \
+        fi; \
+      fi; \
+      rm -f /tmp/schema_engine.gz; \
+    done; \
+    \
     if [ $ENGINE_DOWNLOADED -eq 0 ]; then \
-      echo "⚠ Warning: Could not pre-download Prisma engine, will try during 'prisma generate'"; \
+      echo "⚠ WARNING: Could not pre-download Prisma engines!"; \
+      echo "Prisma will try to download during 'generate' which may fail in Russia"; \
+    else \
+      echo "✓ Prisma engines cached successfully"; \
+      ls -lh /root/.cache/prisma/$PRISMA_HASH/debian-openssl-3.0.x/; \
     fi
 
-# Generate Prisma client with retries and timeout
+# Generate Prisma client with offline mode (uses pre-downloaded engines)
+# Set environment to use cached engines and skip downloading
+ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
+ENV PRISMA_SKIP_DOWNLOAD=1
 RUN set -e; \
     PRISMA_GENERATED=0; \
+    echo "Checking for pre-downloaded Prisma engines..."; \
+    ls -R /root/.cache/prisma/ || echo "No engines in cache yet"; \
+    \
     for i in 1 2 3 4 5; do \
       echo "Attempting Prisma generate (attempt $i/5)..."; \
+      # Run prisma generate with relaxed network requirements
       if timeout 300 yarn workspace @affine/server exec prisma generate 2>&1; then \
         PRISMA_GENERATED=1 && \
         echo "✓ Prisma client generated successfully" && \
         break; \
       else \
-        echo "✗ Prisma generate failed on attempt $i/5"; \
+        EXIT_CODE=$?; \
+        echo "✗ Prisma generate failed on attempt $i/5 (exit code: $EXIT_CODE)"; \
+        \
+        # If engine download failed, try to work around it
+        if [ $i -eq 1 ]; then \
+          echo "Checking Prisma engines cache structure..."; \
+          find /root/.cache/prisma -type f -name "*query_engine*" 2>/dev/null || true; \
+        fi; \
+        \
         if [ $i -lt 5 ]; then \
           echo "Retrying in 10 seconds..."; \
           sleep 10; \
         fi; \
       fi; \
     done; \
+    \
     if [ $PRISMA_GENERATED -eq 0 ]; then \
+      echo ""; \
+      echo "====== PRISMA GENERATION FAILED ======"; \
       echo "ERROR: Failed to generate Prisma client after 5 attempts"; \
+      echo ""; \
+      echo "This is likely due to network issues downloading Prisma engines from Russia."; \
+      echo ""; \
+      echo "Diagnostic information:"; \
+      echo "  - Prisma cache contents:"; \
+      ls -R /root/.cache/prisma/ || echo "    Cache is empty"; \
+      echo ""; \
+      echo "  - Available mirrors:"; \
+      echo "    1. https://binaries.prisma.sh (official)"; \
+      echo "    2. https://github.com/nicksrandall/prisma-engines-prebuilt"; \
+      echo ""; \
+      echo "Suggested solutions:"; \
+      echo "  1. Retry the build (network may be temporarily down)"; \
+      echo "  2. Check internet connection"; \
+      echo "  3. Try using a VPN"; \
+      echo ""; \
       exit 1; \
     fi; \
+    \
     # Verify Prisma client was generated
     if [ ! -d /workspace/node_modules/.prisma/client ]; then \
       echo "ERROR: Prisma client directory not found after generation"; \
