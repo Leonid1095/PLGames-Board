@@ -9,16 +9,22 @@ FROM node:22-bookworm AS builder
 
 WORKDIR /workspace
 
-# Install system dependencies including Rust toolchain
+# Install system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     git \
     python3 \
     build-essential \
     curl \
-    rustc \
-    cargo \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Rust (required for @affine/server-native, needs 1.82+)
+# Using rustup with retry logic for unstable connections
+RUN set -e; \
+    for i in 1 2 3; do \
+        curl --proto '=https' --tlsv1.2 --retry 5 --retry-delay 3 --connect-timeout 30 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable && break || sleep 10; \
+    done
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Copy source code
 COPY . .
