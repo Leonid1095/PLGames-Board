@@ -207,34 +207,42 @@ if [ "$CONFIGURE_FIREWALL" = "y" ] || [ "$CONFIGURE_FIREWALL" = "Y" ]; then
     fi
 fi
 
-# Build and start services
+# Pull pre-built images and start services
 echo ""
-echo -e "${YELLOW}🏗️  Building Docker images (this may take 20-30 minutes)...${NC}"
-echo -e "${YELLOW}   The build process includes:${NC}"
-echo -e "${YELLOW}   - Installing Rust (trying multiple mirrors for Russia)${NC}"
-echo -e "${YELLOW}   - Downloading Prisma engines${NC}"
-echo -e "${YELLOW}   - Building backend and frontend${NC}"
-echo ""
-echo -e "${YELLOW}   💡 You can monitor progress in another terminal with:${NC}"
-echo -e "${YELLOW}      cd ~/plgames-board && docker compose logs -f${NC}"
+echo -e "${YELLOW}📥 Downloading pre-built Docker images...${NC}"
+echo -e "${YELLOW}   This is much faster than building locally (5-10 min vs 20-30 min)${NC}"
+echo -e "${YELLOW}   Images are built on GitHub Actions and published to ghcr.io${NC}"
 echo ""
 
-# Build with error handling
-if docker compose up -d --build; then
-    echo -e "${GREEN}✓ Docker build completed${NC}"
+# Pull images with error handling
+if docker compose pull; then
+    echo -e "${GREEN}✓ Docker images downloaded successfully${NC}"
 else
-    echo -e "${RED}❌ Docker build failed!${NC}"
+    echo -e "${RED}❌ Failed to download Docker images!${NC}"
     echo ""
-    echo -e "${YELLOW}Showing last 50 lines of build logs:${NC}"
+    echo -e "${YELLOW}💡 This could mean:${NC}"
+    echo "   1. Network connectivity issues"
+    echo "   2. Images not yet built on GitHub Actions"
+    echo "   3. Docker registry is temporarily unavailable"
+    echo ""
+    echo -e "${YELLOW}You can try building locally instead (requires VPN in Russia):${NC}"
+    echo "   cd ~/plgames-board && docker compose up -d --build"
+    echo ""
+    echo -e "${YELLOW}Or check GitHub Actions build status:${NC}"
+    echo "   https://github.com/Leonid1095/PLGames-Board/actions"
+    exit 1
+fi
+
+# Start services
+echo ""
+echo -e "${YELLOW}🚀 Starting services...${NC}"
+if docker compose up -d; then
+    echo -e "${GREEN}✓ Services started${NC}"
+else
+    echo -e "${RED}❌ Failed to start services!${NC}"
+    echo ""
+    echo -e "${YELLOW}Showing logs:${NC}"
     docker compose logs --tail=50
-    echo ""
-    echo -e "${YELLOW}💡 Common issues:${NC}"
-    echo "   1. Network timeout downloading Rust/Prisma - retry the installation"
-    echo "   2. Out of disk space - free up space and retry"
-    echo "   3. Out of memory - close other applications and retry"
-    echo ""
-    echo -e "${YELLOW}Full logs available with: docker compose logs${NC}"
-    echo -e "${YELLOW}To retry: cd ~/plgames-board && docker compose up -d --build${NC}"
     exit 1
 fi
 
