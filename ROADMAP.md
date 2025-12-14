@@ -13,31 +13,58 @@
 
 ### Зеркала и альтернативные источники:
 
-| Компонент | Стандартный источник | Зеркало для России |
-|-----------|---------------------|-------------------|
-| **Rust (rustup)** | sh.rustup.rs | rsproxy.cn |
+| Компонент | Стандартный источник | Зеркала для России/Китая |
+|-----------|---------------------|-------------------------|
+| **Rust (rustup)** | sh.rustup.rs | rsproxy.cn, mirrors.tuna.tsinghua.edu.cn |
 | **Cargo crates** | crates.io | mirrors.ustc.edu.cn (sparse) |
-| **Rustup dist** | static.rust-lang.org | rsproxy.cn |
+| **Rustup dist** | static.rust-lang.org | rsproxy.cn, mirrors.tuna.tsinghua.edu.cn |
+| **Prisma engines** | binaries.prisma.sh | GitHub releases, AWS S3 EU |
 
 ### Конфигурация в Dockerfile:
-```dockerfile
-# Rust установка через китайское зеркало
-export RUSTUP_DIST_SERVER="https://rsproxy.cn"
-export RUSTUP_UPDATE_ROOT="https://rsproxy.cn/rustup"
 
-# Cargo использует USTC mirror (Университет науки и технологий Китая)
+#### Установка Rust (несколько зеркал для надежности):
+```dockerfile
+# Попытка установки из нескольких зеркал:
+# 1. rsproxy.cn (Китай, работает в России)
+# 2. sh.rustup.rs (официальное, если доступно)
+# 3. mirrors.tuna.tsinghua.edu.cn (Tsinghua University, Китай)
+
+for MIRROR in \
+    "https://rsproxy.cn/rustup-init.sh|..." \
+    "https://sh.rustup.rs|..." \
+    "https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup-init.sh|..."; \
+do
+    # Try each mirror with timeout
+    curl -sSfL --connect-timeout 30 --max-time 120 "$INIT_URL" ...
+done
+```
+
+#### Cargo конфигурация:
+```toml
 [source.crates-io]
 replace-with = "ustc"
 
 [source.ustc]
 registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"
+
+[net]
+git-fetch-with-cli = true
+```
+
+#### Prisma engines (несколько источников):
+```dockerfile
+# 1. binaries.prisma.sh (официальное)
+# 2. GitHub releases (nicksrandall/prisma-engines-prebuilt)
+# 3. AWS S3 EU (prisma-builds)
 ```
 
 ### Почему это важно:
-- sh.rustup.rs недоступен или нестабилен в России
-- Стандартный crates.io через git медленный/недоступный
-- Sparse протокол работает через HTTP (быстрее и надёжнее)
-- USTC mirror специально создан для таких случаев
+- **Множественные попытки**: Если один источник недоступен, пробуется следующий
+- **Таймауты**: Не зависаем навсегда при блокировке (30-120 секунд)
+- **Retry логика**: До 5 попыток для критичных компонентов (Prisma)
+- **Sparse протокол**: Работает через HTTP (быстрее и надёжнее чем git)
+- **Китайские зеркала**: Специально созданы для обхода блокировок
+- **Подробные логи**: Видно какой источник используется и почему другие не сработали
 
 ---
 

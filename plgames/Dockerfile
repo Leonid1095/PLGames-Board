@@ -24,23 +24,47 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Rust (required for @affine/server-native, needs 1.82+)
-# Using mirrors for Russia-friendly access
+# Using multiple mirrors for reliability (Russia, China, official)
 RUN set -e; \
-    export RUSTUP_DIST_SERVER="https://rsproxy.cn" && \
-    export RUSTUP_UPDATE_ROOT="https://rsproxy.cn/rustup" && \
-    # Try rsproxy.cn first, then official with retries
-    (curl -sSf https://rsproxy.cn/rustup-init.sh -o rustup-init.sh || \
-     curl -sSf --retry 3 --retry-delay 5 https://sh.rustup.rs -o rustup-init.sh) && \
-    chmod +x rustup-init.sh && \
-    sh rustup-init.sh -y --default-toolchain stable --profile minimal && \
-    rm rustup-init.sh && \
-    # Configure cargo to use sparse protocol (faster, works in Russia)
+    RUSTUP_INSTALLED=0; \
+    # Try multiple sources in order of preference for Russia/China
+    for MIRROR in \
+        "https://rsproxy.cn/rustup-init.sh|https://rsproxy.cn|https://rsproxy.cn/rustup" \
+        "https://sh.rustup.rs|https://static.rust-lang.org|https://static.rust-lang.org/rustup" \
+        "https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup-init.sh|https://mirrors.tuna.tsinghua.edu.cn/rustup|https://mirrors.tuna.tsinghua.edu.cn/rustup"; \
+    do \
+        INIT_URL=$(echo $MIRROR | cut -d'|' -f1); \
+        DIST_SERVER=$(echo $MIRROR | cut -d'|' -f2); \
+        UPDATE_ROOT=$(echo $MIRROR | cut -d'|' -f3); \
+        echo "Trying Rust installation from: $INIT_URL"; \
+        export RUSTUP_DIST_SERVER="$DIST_SERVER"; \
+        export RUSTUP_UPDATE_ROOT="$UPDATE_ROOT"; \
+        if curl -sSfL --connect-timeout 30 --max-time 120 "$INIT_URL" -o rustup-init.sh; then \
+            chmod +x rustup-init.sh && \
+            sh rustup-init.sh -y --default-toolchain stable --profile minimal && \
+            rm rustup-init.sh && \
+            RUSTUP_INSTALLED=1 && \
+            echo "✓ Successfully installed Rust from $INIT_URL" && \
+            break; \
+        else \
+            echo "✗ Failed to download from $INIT_URL, trying next mirror..."; \
+            rm -f rustup-init.sh; \
+        fi; \
+    done; \
+    if [ $RUSTUP_INSTALLED -eq 0 ]; then \
+        echo "ERROR: Failed to install Rust from all mirrors"; \
+        exit 1; \
+    fi; \
+    # Configure cargo to use USTC mirror (China, works in Russia)
     mkdir -p ~/.cargo && \
     echo '[source.crates-io]' >> ~/.cargo/config.toml && \
     echo 'replace-with = "ustc"' >> ~/.cargo/config.toml && \
     echo '' >> ~/.cargo/config.toml && \
     echo '[source.ustc]' >> ~/.cargo/config.toml && \
-    echo 'registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"' >> ~/.cargo/config.toml
+    echo 'registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"' >> ~/.cargo/config.toml && \
+    echo '' >> ~/.cargo/config.toml && \
+    echo '[net]' >> ~/.cargo/config.toml && \
+    echo 'git-fetch-with-cli = true' >> ~/.cargo/config.toml
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Copy source code
@@ -65,14 +89,68 @@ ENV NODE_ENV=production
 RUN yarn install --mode=skip-build
 
 # Generate Prisma client (required for database access)
-# Use Prisma mirror for Russia-friendly access
+# Using multiple mirrors for Prisma engines (Russia/China friendly)
 ENV PRISMA_ENGINES_MIRROR="https://binaries.prisma.sh"
-RUN for i in 1 2 3 4 5; do \
-      yarn workspace @affine/server exec prisma generate && break || \
-      (echo "Prisma generate failed, attempt $i/5, retrying in 15s..." && sleep 15); \
-    done && \
-    test -d /workspace/node_modules/.prisma/client && \
-    echo "Prisma client generated successfully"
+ENV PRISMA_CLI_BINARY_TARGETS="debian-openssl-3.0.x"
+RUN set -e; \
+    PRISMA_VERSION=$(yarn workspace @affine/server exec prisma --version 2>/dev/null | grep -oP 'prisma\s*:\s*\K[\d.]+' || echo "6.8.2") && \
+    echo "Prisma version: $PRISMA_VERSION" && \
+    mkdir -p /root/.cache/prisma/master && \
+    ENGINE_DOWNLOADED=0; \
+    # Try multiple sources for Prisma engines (prioritize mirrors accessible from Russia)
+    for URL in \
+      "https://binaries.prisma.sh/all_commits/latest/debian-openssl-3.0.x/libquery_engine.so.node.gz" \
+      "https://github.com/nicksrandall/prisma-engines-prebuilt/releases/download/latest/libquery_engine-debian-openssl-3.0.x.so.node.gz" \
+      "https://prisma-builds.s3-eu-west-1.amazonaws.com/master/latest/debian-openssl-3.0.x/libquery_engine.so.node.gz"; \
+    do \
+      echo "Trying to download Prisma engine from $URL..." && \
+      if curl -sSfL --connect-timeout 30 --max-time 180 --retry 2 -o /tmp/engine.gz "$URL" 2>&1; then \
+        if gunzip -c /tmp/engine.gz > /root/.cache/prisma/master/libquery_engine-debian-openssl-3.0.x.so.node 2>&1; then \
+          chmod +x /root/.cache/prisma/master/libquery_engine-debian-openssl-3.0.x.so.node && \
+          ENGINE_DOWNLOADED=1 && \
+          echo "✓ Successfully downloaded Prisma engine from $URL" && \
+          rm -f /tmp/engine.gz && \
+          break; \
+        else \
+          echo "✗ Failed to decompress Prisma engine from $URL"; \
+          rm -f /tmp/engine.gz; \
+        fi; \
+      else \
+        echo "✗ Failed to download from $URL, trying next mirror..."; \
+        rm -f /tmp/engine.gz; \
+      fi; \
+    done; \
+    if [ $ENGINE_DOWNLOADED -eq 0 ]; then \
+      echo "⚠ Warning: Could not pre-download Prisma engine, will try during 'prisma generate'"; \
+    fi
+
+# Generate Prisma client with retries and timeout
+RUN set -e; \
+    PRISMA_GENERATED=0; \
+    for i in 1 2 3 4 5; do \
+      echo "Attempting Prisma generate (attempt $i/5)..."; \
+      if timeout 300 yarn workspace @affine/server exec prisma generate 2>&1; then \
+        PRISMA_GENERATED=1 && \
+        echo "✓ Prisma client generated successfully" && \
+        break; \
+      else \
+        echo "✗ Prisma generate failed on attempt $i/5"; \
+        if [ $i -lt 5 ]; then \
+          echo "Retrying in 10 seconds..."; \
+          sleep 10; \
+        fi; \
+      fi; \
+    done; \
+    if [ $PRISMA_GENERATED -eq 0 ]; then \
+      echo "ERROR: Failed to generate Prisma client after 5 attempts"; \
+      exit 1; \
+    fi; \
+    # Verify Prisma client was generated
+    if [ ! -d /workspace/node_modules/.prisma/client ]; then \
+      echo "ERROR: Prisma client directory not found after generation"; \
+      exit 1; \
+    fi; \
+    echo "✓ Prisma client verification passed"
 
 # Build templates
 RUN yarn workspace @affine/templates build
