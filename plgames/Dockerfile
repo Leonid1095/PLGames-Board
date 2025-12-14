@@ -69,7 +69,9 @@ RUN yarn install --mode=skip-build
 RUN for i in 1 2 3; do \
       yarn workspace @affine/server exec prisma generate && break || \
       (echo "Prisma generate failed, attempt $i/3, retrying in 10s..." && sleep 10); \
-    done
+    done && \
+    test -d /workspace/node_modules/.prisma/client && \
+    echo "Prisma client generated successfully"
 
 # Build templates
 RUN yarn workspace @affine/templates build
@@ -120,9 +122,6 @@ COPY --from=builder /workspace/packages/common/reader/package.json ./node_module
 
 # Copy native module package
 COPY --from=builder /workspace/packages/backend/native ./node_modules/@affine/server-native
-
-# Copy generated Prisma client
-COPY --from=builder /workspace/node_modules/.prisma ./node_modules/.prisma
 
 EXPOSE 3010
 
