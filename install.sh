@@ -108,20 +108,38 @@ echo -e "${BLUE}═════════════════════�
 echo -e "${BLUE}Installing PLGames Board${NC}"
 echo -e "${BLUE}═══════════════════════════════════════════════════${NC}\n"
 
-# Clone repository
-echo -e "${YELLOW}📦 Cloning repository...${NC}"
+# Clone or update repository
+echo -e "${YELLOW}📦 Setting up repository...${NC}"
 if [ -d ~/plgames-board ]; then
     echo -e "${YELLOW}⚠️  Directory ~/plgames-board already exists${NC}"
     read -p "Remove and reinstall? (y/n) [n]: " REMOVE
     REMOVE=${REMOVE:-n}
     if [ "$REMOVE" = "y" ] || [ "$REMOVE" = "Y" ]; then
+        echo -e "${YELLOW}Removing old installation...${NC}"
+        # Stop containers if running
+        cd ~/plgames-board && docker compose down 2>/dev/null || true
+        cd ~
         rm -rf ~/plgames-board
+        echo -e "${YELLOW}Cloning fresh copy...${NC}"
         git clone https://github.com/Leonid1095/PLGames-Board.git ~/plgames-board
     else
-        echo -e "${YELLOW}Using existing directory${NC}"
+        echo -e "${YELLOW}Updating existing installation...${NC}"
+        cd ~/plgames-board
+        # Stash any local changes
+        git stash 2>/dev/null || true
+        # Pull latest changes
+        git pull origin main || {
+            echo -e "${RED}❌ Failed to update repository. Check your internet connection.${NC}"
+            exit 1
+        }
+        echo -e "${GREEN}✓ Repository updated to latest version${NC}"
     fi
 else
-    git clone https://github.com/Leonid1095/PLGames-Board.git ~/plgames-board
+    echo -e "${YELLOW}Cloning repository...${NC}"
+    git clone https://github.com/Leonid1095/PLGames-Board.git ~/plgames-board || {
+        echo -e "${RED}❌ Failed to clone repository. Check your internet connection.${NC}"
+        exit 1
+    }
 fi
 
 cd ~/plgames-board
@@ -192,23 +210,74 @@ fi
 # Build and start services
 echo ""
 echo -e "${YELLOW}🏗️  Building Docker images (this may take 20-30 minutes)...${NC}"
-echo -e "${YELLOW}   You can monitor progress in another terminal with:${NC}"
-echo -e "${YELLOW}   docker compose logs -f${NC}"
+echo -e "${YELLOW}   The build process includes:${NC}"
+echo -e "${YELLOW}   - Installing Rust (trying multiple mirrors for Russia)${NC}"
+echo -e "${YELLOW}   - Downloading Prisma engines${NC}"
+echo -e "${YELLOW}   - Building backend and frontend${NC}"
+echo ""
+echo -e "${YELLOW}   💡 You can monitor progress in another terminal with:${NC}"
+echo -e "${YELLOW}      cd ~/plgames-board && docker compose logs -f${NC}"
 echo ""
 
-docker compose up -d --build
+# Build with error handling
+if docker compose up -d --build; then
+    echo -e "${GREEN}✓ Docker build completed${NC}"
+else
+    echo -e "${RED}❌ Docker build failed!${NC}"
+    echo ""
+    echo -e "${YELLOW}Showing last 50 lines of build logs:${NC}"
+    docker compose logs --tail=50
+    echo ""
+    echo -e "${YELLOW}💡 Common issues:${NC}"
+    echo "   1. Network timeout downloading Rust/Prisma - retry the installation"
+    echo "   2. Out of disk space - free up space and retry"
+    echo "   3. Out of memory - close other applications and retry"
+    echo ""
+    echo -e "${YELLOW}Full logs available with: docker compose logs${NC}"
+    echo -e "${YELLOW}To retry: cd ~/plgames-board && docker compose up -d --build${NC}"
+    exit 1
+fi
 
 # Wait for services to be healthy
 echo ""
 echo -e "${YELLOW}⏳ Waiting for services to start...${NC}"
-sleep 10
+echo -e "${YELLOW}   This may take 1-2 minutes...${NC}"
 
-# Check if services are running
-if docker compose ps | grep -q "Up"; then
-    echo -e "${GREEN}✓ Services started successfully${NC}"
+# Wait up to 120 seconds for services to be healthy
+WAIT_TIME=0
+MAX_WAIT=120
+while [ $WAIT_TIME -lt $MAX_WAIT ]; do
+    # Check if backend is healthy
+    if docker compose exec -T backend curl -sf http://localhost:3010/api/healthz >/dev/null 2>&1; then
+        echo -e "${GREEN}✓ Backend is healthy${NC}"
+        break
+    fi
+
+    # Show progress
+    if [ $((WAIT_TIME % 10)) -eq 0 ]; then
+        echo -e "${YELLOW}   Still waiting... (${WAIT_TIME}s / ${MAX_WAIT}s)${NC}"
+    fi
+
+    sleep 2
+    WAIT_TIME=$((WAIT_TIME + 2))
+done
+
+# Final status check
+echo ""
+echo -e "${YELLOW}📊 Services status:${NC}"
+docker compose ps
+
+# Check if all services are running
+RUNNING_COUNT=$(docker compose ps | grep -c "Up" || echo "0")
+if [ "$RUNNING_COUNT" -ge 4 ]; then
+    echo -e "${GREEN}✓ All services are running${NC}"
 else
-    echo -e "${YELLOW}⚠️  Some services may still be starting${NC}"
-    echo "   Check status with: docker compose ps"
+    echo -e "${YELLOW}⚠️  Some services may still be starting or have issues${NC}"
+    echo ""
+    echo -e "${YELLOW}Check logs with:${NC}"
+    echo "   docker compose logs backend"
+    echo "   docker compose logs frontend"
+    echo "   docker compose logs postgres"
 fi
 
 # Success message

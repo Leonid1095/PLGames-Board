@@ -11,19 +11,42 @@
 
 ## 🚀 Quick Start (Production)
 
-**One-line installation** - like GitLab, Nextcloud, or official AFFiNE:
+### Interactive Installation (Recommended)
+
+**One-line installation** - Interactive setup like GitLab, Nextcloud:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Leonid1095/boards_plane/main/install.sh | bash
+bash <(curl -fsSL https://raw.githubusercontent.com/Leonid1095/PLGames-Board/main/install.sh)
 ```
 
-That's it! The script will:
-- ✅ Clone the repository
-- ✅ Build everything inside Docker (20-30 minutes)
+The interactive installer will:
+- ✅ Ask for your domain (or use localhost for development)
+- ✅ Configure HTTPS ports (80/443 by default)
+- ✅ Generate secure database password automatically
+- ✅ Optionally configure firewall rules
+- ✅ Clone and build everything inside Docker (20-30 minutes)
 - ✅ Start all services automatically
-- ✅ Provide you with access URL at http://localhost:8080
+- ✅ Show you the access URL when complete
 
-**Requirements:** Any Linux with Docker, 8GB RAM, 20GB disk space
+**First user to register becomes admin!**
+
+### Manual Installation
+
+```bash
+# Clone repository
+git clone https://github.com/Leonid1095/PLGames-Board.git ~/plgames-board
+cd ~/plgames-board
+
+# Run interactive installer
+bash install.sh
+```
+
+### Requirements
+- **OS:** Linux (Ubuntu 20.04+, Debian 11+, CentOS 8+)
+- **Docker:** 20.10+ with Docker Compose V2
+- **RAM:** 8GB minimum (for build), 4GB for runtime
+- **Disk:** 20GB free space
+- **Network:** Good internet connection (downloads ~2GB during build)
 
 ---
 
