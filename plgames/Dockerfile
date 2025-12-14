@@ -65,7 +65,11 @@ ENV NODE_ENV=production
 RUN yarn install --mode=skip-build
 
 # Generate Prisma client (required for database access)
-RUN yarn workspace @affine/server exec prisma generate
+# Retry up to 3 times in case of network issues
+RUN for i in 1 2 3; do \
+      yarn workspace @affine/server exec prisma generate && break || \
+      (echo "Prisma generate failed, attempt $i/3, retrying in 10s..." && sleep 10); \
+    done
 
 # Build templates
 RUN yarn workspace @affine/templates build
