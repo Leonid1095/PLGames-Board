@@ -116,12 +116,12 @@ if [ -d ~/plgames-board ]; then
     REMOVE=${REMOVE:-n}
     if [ "$REMOVE" = "y" ] || [ "$REMOVE" = "Y" ]; then
         rm -rf ~/plgames-board
-        git clone https://github.com/Leonid1095/boards_plane.git ~/plgames-board
+        git clone https://github.com/Leonid1095/PLGames-Board.git ~/plgames-board
     else
         echo -e "${YELLOW}Using existing directory${NC}"
     fi
 else
-    git clone https://github.com/Leonid1095/boards_plane.git ~/plgames-board
+    git clone https://github.com/Leonid1095/PLGames-Board.git ~/plgames-board
 fi
 
 cd ~/plgames-board
@@ -235,7 +235,7 @@ echo "   • Restart:       docker compose restart"
 echo ""
 echo -e "4. ${YELLOW}Documentation:${NC}"
 echo "   • README:        ~/plgames-board/README.md"
-echo "   • GitHub:        https://github.com/Leonid1095/boards_plane"
+echo "   • GitHub:        https://github.com/Leonid1095/PLGames-Board"
 echo ""
 
 if [ "$DOMAIN" != "localhost" ]; then

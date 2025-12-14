@@ -1,6 +1,9 @@
-# Multi-stage Dockerfile for PLGames Board
-# Stage 1: Build
-# Stage 2: Runtime
+# PLGames Board - Production Dockerfile
+# Based on AFFiNE, optimized for deployment in Russia
+#
+# Stage 1: Build - compiles frontend and backend
+# Stage 2: Backend - Node.js server
+# Stage 3: Frontend - Caddy static file server
 
 # ============================================
 # Stage 1: Build everything inside Docker
@@ -21,16 +24,30 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Rust (required for @affine/server-native, needs 1.82+)
-# Using alternative mirror for Russia-friendly access
+# Using multiple mirrors for Russia-friendly access
 RUN set -e; \
     export RUSTUP_DIST_SERVER="https://rsproxy.cn" && \
     export RUSTUP_UPDATE_ROOT="https://rsproxy.cn/rustup" && \
-    wget -O rustup-init.sh https://rsproxy.cn/rustup-init.sh && \
+    # Try rsproxy.cn first, then official with retries
+    (curl -sSf https://rsproxy.cn/rustup-init.sh -o rustup-init.sh || \
+     curl -sSf --retry 3 --retry-delay 5 https://sh.rustup.rs -o rustup-init.sh) && \
     chmod +x rustup-init.sh && \
-    ./rustup-init.sh -y --default-toolchain stable --profile minimal && \
-    rm rustup-init.sh
+    sh rustup-init.sh -y --default-toolchain stable --profile minimal && \
+    rm rustup-init.sh && \
+    # Configure cargo to use mirror
+    mkdir -p ~/.cargo && \
+    echo '[source.crates-io]' >> ~/.cargo/config.toml && \
+    echo 'replace-with = "rsproxy"' >> ~/.cargo/config.toml && \
+    echo '' >> ~/.cargo/config.toml && \
+    echo '[source.rsproxy]' >> ~/.cargo/config.toml && \
+    echo 'registry = "https://rsproxy.cn/crates.io-index"' >> ~/.cargo/config.toml && \
+    echo '' >> ~/.cargo/config.toml && \
+    echo '[registries.rsproxy]' >> ~/.cargo/config.toml && \
+    echo 'index = "https://rsproxy.cn/crates.io-index"' >> ~/.cargo/config.toml && \
+    echo '' >> ~/.cargo/config.toml && \
+    echo '[net]' >> ~/.cargo/config.toml && \
+    echo 'git-fetch-with-cli = true' >> ~/.cargo/config.toml
 ENV PATH="/root/.cargo/bin:${PATH}"
-ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 
 # Copy source code
 COPY . .
@@ -68,13 +85,9 @@ RUN yarn workspace @affine/reader build && \
 RUN timeout 1800 yarn plgames build -p @affine/web || \
     (echo "Frontend build timed out after 30 minutes" && exit 1)
 
-# Debug: Show what was actually built
-RUN echo "=== Checking frontend build output ===" && \
-    ls -la /workspace/packages/frontend/apps/web/ && \
-    echo "=== Contents of dist (if exists) ===" && \
-    ls -la /workspace/packages/frontend/apps/web/dist || echo "dist directory not found" && \
-    echo "=== Looking for any dist directories ===" && \
-    find /workspace/packages/frontend/apps/web -name dist -type d
+# Verify frontend build succeeded
+RUN test -d /workspace/packages/frontend/apps/web/dist || \
+    (echo "ERROR: Frontend build failed - dist directory not found" && exit 1)
 
 # ============================================
 # Stage 2: Runtime - Backend
