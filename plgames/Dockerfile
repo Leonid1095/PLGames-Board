@@ -65,10 +65,11 @@ ENV NODE_ENV=production
 RUN yarn install --mode=skip-build
 
 # Generate Prisma client (required for database access)
-# Retry up to 3 times in case of network issues
-RUN for i in 1 2 3; do \
+# Use Prisma mirror for Russia-friendly access
+ENV PRISMA_ENGINES_MIRROR="https://binaries.prisma.sh"
+RUN for i in 1 2 3 4 5; do \
       yarn workspace @affine/server exec prisma generate && break || \
-      (echo "Prisma generate failed, attempt $i/3, retrying in 10s..." && sleep 10); \
+      (echo "Prisma generate failed, attempt $i/5, retrying in 15s..." && sleep 15); \
     done && \
     test -d /workspace/node_modules/.prisma/client && \
     echo "Prisma client generated successfully"
