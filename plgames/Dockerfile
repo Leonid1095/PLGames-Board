@@ -24,7 +24,7 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Rust (required for @affine/server-native, needs 1.82+)
-# Using multiple mirrors for Russia-friendly access
+# Using mirrors for Russia-friendly access
 RUN set -e; \
     export RUSTUP_DIST_SERVER="https://rsproxy.cn" && \
     export RUSTUP_UPDATE_ROOT="https://rsproxy.cn/rustup" && \
@@ -34,19 +34,13 @@ RUN set -e; \
     chmod +x rustup-init.sh && \
     sh rustup-init.sh -y --default-toolchain stable --profile minimal && \
     rm rustup-init.sh && \
-    # Configure cargo to use mirror
+    # Configure cargo to use sparse protocol (faster, works in Russia)
     mkdir -p ~/.cargo && \
     echo '[source.crates-io]' >> ~/.cargo/config.toml && \
-    echo 'replace-with = "rsproxy"' >> ~/.cargo/config.toml && \
+    echo 'replace-with = "ustc"' >> ~/.cargo/config.toml && \
     echo '' >> ~/.cargo/config.toml && \
-    echo '[source.rsproxy]' >> ~/.cargo/config.toml && \
-    echo 'registry = "https://rsproxy.cn/crates.io-index"' >> ~/.cargo/config.toml && \
-    echo '' >> ~/.cargo/config.toml && \
-    echo '[registries.rsproxy]' >> ~/.cargo/config.toml && \
-    echo 'index = "https://rsproxy.cn/crates.io-index"' >> ~/.cargo/config.toml && \
-    echo '' >> ~/.cargo/config.toml && \
-    echo '[net]' >> ~/.cargo/config.toml && \
-    echo 'git-fetch-with-cli = true' >> ~/.cargo/config.toml
+    echo '[source.ustc]' >> ~/.cargo/config.toml && \
+    echo 'registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"' >> ~/.cargo/config.toml
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Copy source code
