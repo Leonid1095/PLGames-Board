@@ -16,15 +16,21 @@ RUN apt-get update && \
     python3 \
     build-essential \
     curl \
+    wget \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Rust (required for @affine/server-native, needs 1.82+)
-# Using rustup with retry logic for unstable connections
+# Using alternative mirror for Russia-friendly access
 RUN set -e; \
-    for i in 1 2 3; do \
-        curl --proto '=https' --tlsv1.2 --retry 5 --retry-delay 3 --connect-timeout 30 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable && break || sleep 10; \
-    done
+    export RUSTUP_DIST_SERVER="https://rsproxy.cn" && \
+    export RUSTUP_UPDATE_ROOT="https://rsproxy.cn/rustup" && \
+    wget -O rustup-init.sh https://rsproxy.cn/rustup-init.sh && \
+    chmod +x rustup-init.sh && \
+    ./rustup-init.sh -y --default-toolchain stable --profile minimal && \
+    rm rustup-init.sh
 ENV PATH="/root/.cargo/bin:${PATH}"
+ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 
 # Copy source code
 COPY . .
