@@ -64,8 +64,8 @@ ENV NODE_ENV=production
 # Install dependencies (skip native builds)
 RUN yarn install --mode=skip-build
 
-# Generate Prisma client
-RUN yarn workspace @affine/server exec prisma generate || true
+# Generate Prisma client (required for database access)
+RUN yarn workspace @affine/server exec prisma generate
 
 # Build templates
 RUN yarn workspace @affine/templates build
@@ -116,6 +116,9 @@ COPY --from=builder /workspace/packages/common/reader/package.json ./node_module
 
 # Copy native module package
 COPY --from=builder /workspace/packages/backend/native ./node_modules/@affine/server-native
+
+# Copy generated Prisma client
+COPY --from=builder /workspace/node_modules/.prisma ./node_modules/.prisma
 
 EXPOSE 3010
 
