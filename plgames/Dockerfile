@@ -16,11 +16,9 @@ RUN apt-get update && \
     python3 \
     build-essential \
     curl \
+    rustc \
+    cargo \
     && rm -rf /var/lib/apt/lists/*
-
-# Install Rust (required for @affine/server-native)
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Copy source code
 COPY . .
