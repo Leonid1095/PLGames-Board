@@ -4,7 +4,7 @@ import type {
   FactoryProvider,
   OnModuleInit,
 } from '@nestjs/common';
-import { Injectable, SetMetadata } from '@nestjs/common';
+import { Injectable, SetMetadata, UseGuards, applyDecorators } from '@nestjs/common';
 import { ModuleRef, Reflector } from '@nestjs/core';
 import type { Request, Response } from 'express';
 import { Socket } from 'socket.io';
@@ -133,6 +133,11 @@ export class AuthGuard implements CanActivate, OnModuleInit {
     return null;
   }
 }
+
+/**
+ * Apply authentication guard to ensure user is authenticated
+ */
+export const Auth = () => applyDecorators(UseGuards(AuthGuard));
 
 /**
  * Mark api to be public accessible
