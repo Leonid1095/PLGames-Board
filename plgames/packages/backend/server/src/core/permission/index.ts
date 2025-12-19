@@ -1,9 +1,20 @@
-import { Module } from '@nestjs/common';
+import { Injectable, Module } from '@nestjs/common';
 
 import { AccessControllerBuilder } from './builder';
 import { DocAccessController } from './doc';
 import { EventsListener } from './event';
+import { Action } from './types';
 import { WorkspaceAccessController } from './workspace';
+
+@Injectable()
+export class PermissionService {
+  constructor(private readonly access: AccessControllerBuilder) {}
+
+  async isWorkspaceMember(workspaceId: string, userId: string) {
+    // Checks minimal workspace read permission for user
+    return this.access.user(userId).workspace(workspaceId).can(Action.Workspace.Read);
+  }
+}
 
 @Module({
   providers: [
@@ -11,8 +22,9 @@ import { WorkspaceAccessController } from './workspace';
     DocAccessController,
     AccessControllerBuilder,
     EventsListener,
+    PermissionService,
   ],
-  exports: [AccessControllerBuilder],
+  exports: [AccessControllerBuilder, PermissionService],
 })
 export class PermissionModule {}
 
