@@ -20,7 +20,20 @@
       "Bash(grep:*)",
       "Bash(git restore:*)",
       "Bash(curl:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Bash(cd:*)",
+      "Bash(gh run:*)",
+      "Bash(sudo lsof:*)",
+      "Bash(ss:*)",
+      "Bash(netstat:*)",
+      "Bash(xargs grep:*)",
+      "Bash(git -C \"/e/Cursor Project/plane\" log --oneline --all -- \"plgames/packages/backend/server/src/core/auth/index.ts\")",
+      "Bash(git -C \"/e/Cursor Project/plane\" show a3b67a808:plgames/packages/backend/server/src/core/auth/index.ts)",
+      "Bash(git -C \"/e/Cursor Project/plane\" log --oneline --all -- \"plgames/packages/backend/server/src/core/crm/crm.resolver.ts\")",
+      "Bash(git -C \"/e/Cursor Project/plane\" log --all --pretty=format:\"%h %s\")"
     ],
     "deny": [],
     "ask": []

@@ -1,6 +1,7 @@
 #!/bin/bash
 # PLGames Board - Interactive Installation Script
-# This script helps you easily install and configure PLGames Board
+# Optimized for production with pre-built Docker images
+# Works in Russia and any region with restricted network access
 
 set -e
 
@@ -9,319 +10,331 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
+
+# Global variables
+INSTALL_DIR="$HOME/plgames-board"
+REPO_URL="https://github.com/Leonid1095/PLGames-Board.git"
 
 # Banner
 echo -e "${BLUE}"
-echo "╔═══════════════════════════════════════════════════╗"
-echo "║                                                   ║"
-echo "║          🎮 PLGames Board Installation           ║"
-echo "║                                                   ║"
-echo "║     Collaborative workspace for game teams       ║"
-echo "║                                                   ║"
-echo "╚═══════════════════════════════════════════════════╝"
+echo "╔══════════════════════════════════════════════════════╗"
+echo "║                                                      ║"
+echo "║        🎮 PLGames Board - Smart Installation       ║"
+echo "║                                                      ║"
+echo "║  Collaborative workspace for game teams & projects  ║"
+echo "║  Uses pre-built images - Works in any region        ║"
+echo "║                                                      ║"
+echo "╚══════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
-# Check if Docker is installed
-echo -e "${YELLOW}Checking requirements...${NC}"
+# ============================================================================
+# REQUIREMENTS CHECK
+# ============================================================================
+echo -e "${YELLOW}[1/5] Checking system requirements...${NC}"
+
 if ! command -v docker &> /dev/null; then
-    echo -e "${RED}❌ Docker is not installed. Please install Docker first:${NC}"
-    echo "   https://docs.docker.com/get-docker/"
+    echo -e "${RED}❌ Docker not found. Install from: https://docs.docker.com/get-docker/${NC}"
     exit 1
 fi
 
 if ! docker compose version &> /dev/null; then
-    echo -e "${RED}❌ Docker Compose is not installed. Please install Docker Compose first:${NC}"
-    echo "   https://docs.docker.com/compose/install/"
+    echo -e "${RED}❌ Docker Compose not found. Install from: https://docs.docker.com/compose/install/${NC}"
     exit 1
 fi
 
-echo -e "${GREEN}✓ Docker and Docker Compose are installed${NC}\n"
+# Check available disk space (minimum 5GB)
+AVAILABLE_SPACE=$(df "$HOME" | awk 'NR==2 {print $4}')
+if [ "$AVAILABLE_SPACE" -lt 5242880 ]; then
+    echo -e "${RED}❌ Less than 5GB free disk space available${NC}"
+    exit 1
+fi
 
-# Configuration questions
-echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
-echo -e "${BLUE}Configuration${NC}"
-echo -e "${BLUE}═══════════════════════════════════════════════════${NC}\n"
+echo -e "${GREEN}✓ Docker ${GREEN}✓ Docker Compose ${GREEN}✓ Disk space${NC}\n"
 
-# Domain configuration
-echo -e "${YELLOW}Domain Configuration:${NC}"
-echo "  • For local development: use 'localhost' (HTTP on port 80)"
-echo "  • For production: use your domain (automatic HTTPS with Let's Encrypt)"
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
+echo -e "${YELLOW}[2/5] Configuration${NC}\n"
+
+echo -e "${CYAN}Domain Setup:${NC}"
+echo "  localhost      → Local/development (HTTP on port 80)"
+echo "  example.com    → Production (HTTPS with Let's Encrypt)"
 echo ""
-read -p "Enter your domain [localhost]: " DOMAIN
+read -p "Enter domain [localhost]: " DOMAIN
 DOMAIN=${DOMAIN:-localhost}
 
-# Port configuration
-echo ""
-echo -e "${YELLOW}Port Configuration:${NC}"
+# Auto-configure ports and URL
 if [ "$DOMAIN" = "localhost" ]; then
-    echo "  Using HTTP on port 80 (localhost mode)"
     HTTP_PORT=80
     HTTPS_PORT=443
     BASE_URL="http://localhost"
+    SKIP_FIREWALL=true
 else
-    echo "  Using HTTPS with automatic Let's Encrypt certificate"
+    BASE_URL="https://${DOMAIN}"
     read -p "HTTP port [80]: " HTTP_PORT
     HTTP_PORT=${HTTP_PORT:-80}
     read -p "HTTPS port [443]: " HTTPS_PORT
     HTTPS_PORT=${HTTPS_PORT:-443}
-    BASE_URL="https://${DOMAIN}"
+    read -p "Configure firewall? (y/n) [n]: " CONFIGURE_FIREWALL
+    SKIP_FIREWALL=$([ "$CONFIGURE_FIREWALL" = "y" ] && echo "false" || echo "true")
 fi
 
-# Database configuration
-echo ""
-echo -e "${YELLOW}Database Configuration:${NC}"
-DB_PASSWORD=$(openssl rand -hex 16 2>/dev/null || cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
-echo "  Auto-generated secure database password"
+# Generate secure password
+DB_PASSWORD=$(head -c 32 /dev/urandom | base64 | tr -d '=+/' | cut -c1-32)
 
-# Firewall configuration
-CONFIGURE_FIREWALL="n"
-if [ "$DOMAIN" != "localhost" ]; then
-    echo ""
-    echo -e "${YELLOW}Firewall Configuration:${NC}"
-    read -p "Configure firewall rules for ports ${HTTP_PORT} and ${HTTPS_PORT}? (y/n) [n]: " CONFIGURE_FIREWALL
-    CONFIGURE_FIREWALL=${CONFIGURE_FIREWALL:-n}
-fi
-
-# Summary
+# Show summary
 echo ""
-echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
-echo -e "${BLUE}Installation Summary${NC}"
-echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
-echo -e "Domain:       ${GREEN}${DOMAIN}${NC}"
-echo -e "Access URL:   ${GREEN}${BASE_URL}${NC}"
-echo -e "HTTP Port:    ${GREEN}${HTTP_PORT}${NC}"
-echo -e "HTTPS Port:   ${GREEN}${HTTPS_PORT}${NC}"
-echo -e "Install Dir:  ${GREEN}~/plgames-board${NC}"
+echo -e "${BLUE}═════════════════════════════════════════════════════${NC}"
+echo -e "Domain:        ${GREEN}${DOMAIN}${NC}"
+echo -e "Access URL:    ${GREEN}${BASE_URL}${NC}"
+echo -e "Install Path:  ${GREEN}${INSTALL_DIR}${NC}"
+echo -e "HTTP/HTTPS:    ${GREEN}${HTTP_PORT}/${HTTPS_PORT}${NC}"
+echo -e "${BLUE}═════════════════════════════════════════════════════${NC}"
 echo ""
-read -p "Continue with installation? (y/n) [y]: " CONFIRM
+read -p "Proceed? (y/n) [y]: " CONFIRM
 CONFIRM=${CONFIRM:-y}
 
 if [ "$CONFIRM" != "y" ] && [ "$CONFIRM" != "Y" ]; then
-    echo -e "${RED}Installation cancelled.${NC}"
+    echo -e "${RED}Installation cancelled${NC}"
     exit 0
 fi
 
-# Start installation
+# ============================================================================
+# REPOSITORY SETUP
+# ============================================================================
 echo ""
-echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
-echo -e "${BLUE}Installing PLGames Board${NC}"
-echo -e "${BLUE}═══════════════════════════════════════════════════${NC}\n"
+echo -e "${YELLOW}[3/5] Setting up repository${NC}"
 
-# Clone or update repository
-echo -e "${YELLOW}📦 Setting up repository...${NC}"
-if [ -d ~/plgames-board ]; then
-    echo -e "${YELLOW}⚠️  Directory ~/plgames-board already exists${NC}"
-    read -p "Remove and reinstall? (y/n) [n]: " REMOVE
-    REMOVE=${REMOVE:-n}
-    if [ "$REMOVE" = "y" ] || [ "$REMOVE" = "Y" ]; then
-        echo -e "${YELLOW}Removing old installation...${NC}"
-        # Stop containers if running
-        cd ~/plgames-board && docker compose down 2>/dev/null || true
-        cd ~
-        rm -rf ~/plgames-board
-        echo -e "${YELLOW}Cloning fresh copy...${NC}"
-        git clone https://github.com/Leonid1095/PLGames-Board.git ~/plgames-board
-    else
-        echo -e "${YELLOW}Updating existing installation...${NC}"
-        cd ~/plgames-board
-        # Stash any local changes
-        git stash 2>/dev/null || true
-        # Pull latest changes
-        git pull origin main || {
-            echo -e "${RED}❌ Failed to update repository. Check your internet connection.${NC}"
+if [ -d "$INSTALL_DIR" ]; then
+    echo -e "${CYAN}Existing installation found at $INSTALL_DIR${NC}"
+    read -p "Start fresh (will remove old data)? (y/n) [n]: " FRESH_INSTALL
+    FRESH_INSTALL=${FRESH_INSTALL:-n}
+    
+    if [ "$FRESH_INSTALL" = "y" ] || [ "$FRESH_INSTALL" = "Y" ]; then
+        echo -e "${YELLOW}Stopping containers...${NC}"
+        (cd "$INSTALL_DIR" && docker compose down -v 2>/dev/null) || true
+        
+        echo -e "${YELLOW}Removing old data...${NC}"
+        rm -rf "$INSTALL_DIR"
+        
+        echo -e "${YELLOW}Cloning fresh repository...${NC}"
+        git clone "$REPO_URL" "$INSTALL_DIR" || {
+            echo -e "${RED}❌ Failed to clone repository${NC}"
             exit 1
         }
-        echo -e "${GREEN}✓ Repository updated to latest version${NC}"
+    else
+        echo -e "${YELLOW}Updating existing installation...${NC}"
+        cd "$INSTALL_DIR"
+        git stash 2>/dev/null || true
+        git pull origin main || {
+            echo -e "${RED}❌ Failed to update${NC}"
+            exit 1
+        }
     fi
 else
     echo -e "${YELLOW}Cloning repository...${NC}"
-    git clone https://github.com/Leonid1095/PLGames-Board.git ~/plgames-board || {
-        echo -e "${RED}❌ Failed to clone repository. Check your internet connection.${NC}"
+    git clone "$REPO_URL" "$INSTALL_DIR" || {
+        echo -e "${RED}❌ Failed to clone repository${NC}"
         exit 1
     }
 fi
 
-cd ~/plgames-board
+cd "$INSTALL_DIR"
+echo -e "${GREEN}✓ Repository ready${NC}"
 
-# Create .env file
+# ============================================================================
+# ENVIRONMENT CONFIGURATION
+# ============================================================================
 echo ""
-echo -e "${YELLOW}⚙️  Creating configuration file...${NC}"
+echo -e "${YELLOW}[4/5] Creating configuration${NC}"
+
 cat > .env << EOF
 # PLGames Board Configuration
-# Generated by install.sh on $(date)
+# Generated on $(date)
 
-# Basic Configuration
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Core Settings
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 NODE_ENV=production
-
-# Domain Configuration
 DOMAIN=${DOMAIN}
 BASE_URL=${BASE_URL}
 
-# Gateway Ports
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Network & Ports
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 HTTP_PORT=${HTTP_PORT}
 HTTPS_PORT=${HTTPS_PORT}
+BACKEND_PORT=3010
+AFFINE_SERVER_PORT=3010
 
-# Database Configuration
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Database (PostgreSQL)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 DB_USER=plgames
 DB_PASSWORD=${DB_PASSWORD}
 DB_NAME=plgames
 DATABASE_URL=postgres://plgames:${DB_PASSWORD}@postgres:5432/plgames
 
-# Server Configuration
-PORT=3010
-AFFINE_SERVER_HOST=0.0.0.0
-AFFINE_SERVER_PORT=3010
-AFFINE_SERVER_EXTERNAL_URL=${BASE_URL}
-
-# Redis Configuration
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Cache (Redis)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 REDIS_SERVER_HOST=redis
 REDIS_SERVER_PORT=6379
 
-# AI Configuration (Disabled by default)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# AI & Optional Features (Disabled by default)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 AFFINE_COPILOT_ENABLED=false
+# AFFINE_COPILOT_OPENROUTER_API_KEY=
+# AFFINE_COPILOT_OPENROUTER_MODEL=meta-llama/llama-3.1-70b-instruct
 
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# OAuth (Yandex) - Optional
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# OIDC_CLIENT_ID=
+# OIDC_CLIENT_SECRET=
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # Feature Flags
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 AFFINE_TELEMETRY_ENABLED=false
 AFFINE_METRICS_ENABLED=true
 EOF
 
 echo -e "${GREEN}✓ Configuration created${NC}"
 
-# Configure firewall if requested
-if [ "$CONFIGURE_FIREWALL" = "y" ] || [ "$CONFIGURE_FIREWALL" = "Y" ]; then
+# ============================================================================
+# FIREWALL CONFIGURATION
+# ============================================================================
+if [ "$SKIP_FIREWALL" = "false" ]; then
     echo ""
-    echo -e "${YELLOW}🔥 Configuring firewall...${NC}"
+    echo -e "${YELLOW}Configuring firewall...${NC}"
+    
     if command -v ufw &> /dev/null; then
-        sudo ufw allow ${HTTP_PORT}/tcp
-        sudo ufw allow ${HTTPS_PORT}/tcp
+        sudo ufw allow ${HTTP_PORT}/tcp 2>/dev/null || true
+        sudo ufw allow ${HTTPS_PORT}/tcp 2>/dev/null || true
         echo -e "${GREEN}✓ UFW rules added${NC}"
     elif command -v firewall-cmd &> /dev/null; then
-        sudo firewall-cmd --permanent --add-port=${HTTP_PORT}/tcp
-        sudo firewall-cmd --permanent --add-port=${HTTPS_PORT}/tcp
-        sudo firewall-cmd --reload
-        echo -e "${GREEN}✓ Firewall-cmd rules added${NC}"
+        sudo firewall-cmd --permanent --add-port=${HTTP_PORT}/tcp 2>/dev/null || true
+        sudo firewall-cmd --permanent --add-port=${HTTPS_PORT}/tcp 2>/dev/null || true
+        sudo firewall-cmd --reload 2>/dev/null || true
+        echo -e "${GREEN}✓ Firewalld rules added${NC}"
     else
-        echo -e "${YELLOW}⚠️  No supported firewall found (ufw or firewalld)${NC}"
-        echo "   Manually open ports ${HTTP_PORT} and ${HTTPS_PORT}"
+        echo -e "${YELLOW}⚠️  No firewall found, please open ports manually:${NC}"
+        echo "   sudo iptables -A INPUT -p tcp --dport ${HTTP_PORT} -j ACCEPT"
+        echo "   sudo iptables -A INPUT -p tcp --dport ${HTTPS_PORT} -j ACCEPT"
     fi
 fi
 
-# Pull pre-built images and start services
+# ============================================================================
+# DOCKER STARTUP
+# ============================================================================
 echo ""
-echo -e "${YELLOW}📥 Downloading pre-built Docker images...${NC}"
-echo -e "${YELLOW}   This is much faster than building locally (5-10 min vs 20-30 min)${NC}"
-echo -e "${YELLOW}   Images are built on GitHub Actions and published to ghcr.io${NC}"
+echo -e "${YELLOW}[5/5] Starting services${NC}"
+echo -e "${CYAN}Downloading pre-built Docker images...${NC}"
+echo -e "${CYAN}(Images built on GitHub, no compilation needed)${NC}"
 echo ""
 
-# Pull images with error handling
-if docker compose pull; then
-    echo -e "${GREEN}✓ Docker images downloaded successfully${NC}"
-else
-    echo -e "${RED}❌ Failed to download Docker images!${NC}"
+if docker compose pull 2>&1 | grep -E "(Error|error|Failed|ERROR)" > /dev/null; then
+    echo -e "${RED}❌ Failed to download images${NC}"
     echo ""
-    echo -e "${YELLOW}💡 This could mean:${NC}"
-    echo "   1. Network connectivity issues"
-    echo "   2. Images not yet built on GitHub Actions"
-    echo "   3. Docker registry is temporarily unavailable"
+    echo -e "${YELLOW}Troubleshooting:${NC}"
+    echo "  • Check internet connection: curl -I https://ghcr.io"
+    echo "  • Docker daemon running: docker ps"
+    echo "  • Disk space available: df -h"
     echo ""
-    echo -e "${YELLOW}You can try building locally instead (requires VPN in Russia):${NC}"
-    echo "   cd ~/plgames-board && docker compose up -d --build"
-    echo ""
-    echo -e "${YELLOW}Or check GitHub Actions build status:${NC}"
-    echo "   https://github.com/Leonid1095/PLGames-Board/actions"
+    echo -e "${CYAN}Latest build status:${NC}"
+    echo "  https://github.com/Leonid1095/PLGames-Board/actions"
     exit 1
 fi
 
-# Start services
-echo ""
-echo -e "${YELLOW}🚀 Starting services...${NC}"
-if docker compose up -d; then
-    echo -e "${GREEN}✓ Services started${NC}"
-else
-    echo -e "${RED}❌ Failed to start services!${NC}"
-    echo ""
-    echo -e "${YELLOW}Showing logs:${NC}"
-    docker compose logs --tail=50
+echo -e "${GREEN}✓ Images downloaded${NC}"
+echo -e "${CYAN}Starting containers...${NC}"
+
+if ! docker compose up -d; then
+    echo -e "${RED}❌ Failed to start containers${NC}"
+    echo -e "${CYAN}Logs:${NC}"
+    docker compose logs --tail=30
     exit 1
 fi
 
-# Wait for services to be healthy
-echo ""
-echo -e "${YELLOW}⏳ Waiting for services to start...${NC}"
-echo -e "${YELLOW}   This may take 1-2 minutes...${NC}"
+echo -e "${GREEN}✓ Containers started${NC}"
 
-# Wait up to 120 seconds for services to be healthy
+# ============================================================================
+# HEALTH CHECK
+# ============================================================================
+echo ""
+echo -e "${CYAN}Waiting for services to be ready... (this may take 1-2 minutes)${NC}"
+
 WAIT_TIME=0
-MAX_WAIT=120
+MAX_WAIT=180
+HEALTH_OK=false
+
 while [ $WAIT_TIME -lt $MAX_WAIT ]; do
-    # Check if backend is healthy
-    if docker compose exec -T backend curl -sf http://localhost:3010/api/healthz >/dev/null 2>&1; then
-        echo -e "${GREEN}✓ Backend is healthy${NC}"
+    # Check backend health
+    if docker compose exec -T backend curl -sf http://localhost:3010/api/healthz &>/dev/null 2>&1; then
+        HEALTH_OK=true
         break
     fi
-
-    # Show progress
-    if [ $((WAIT_TIME % 10)) -eq 0 ]; then
-        echo -e "${YELLOW}   Still waiting... (${WAIT_TIME}s / ${MAX_WAIT}s)${NC}"
+    
+    if [ $((WAIT_TIME % 30)) -eq 0 ] && [ $WAIT_TIME -gt 0 ]; then
+        echo -e "${YELLOW}Still waiting... ($WAIT_TIME/$MAX_WAIT sec)${NC}"
     fi
-
-    sleep 2
-    WAIT_TIME=$((WAIT_TIME + 2))
+    
+    sleep 3
+    WAIT_TIME=$((WAIT_TIME + 3))
 done
 
-# Final status check
 echo ""
-echo -e "${YELLOW}📊 Services status:${NC}"
 docker compose ps
+echo ""
 
-# Check if all services are running
-RUNNING_COUNT=$(docker compose ps | grep -c "Up" || echo "0")
-if [ "$RUNNING_COUNT" -ge 4 ]; then
-    echo -e "${GREEN}✓ All services are running${NC}"
+if [ "$HEALTH_OK" = "true" ]; then
+    echo -e "${GREEN}✓ All services are healthy${NC}"
 else
-    echo -e "${YELLOW}⚠️  Some services may still be starting or have issues${NC}"
-    echo ""
-    echo -e "${YELLOW}Check logs with:${NC}"
-    echo "   docker compose logs backend"
-    echo "   docker compose logs frontend"
-    echo "   docker compose logs postgres"
+    echo -e "${YELLOW}⚠️  Services started but may still be initializing${NC}"
+    echo -e "${CYAN}Check backend logs: docker compose logs backend${NC}"
 fi
 
-# Success message
+# ============================================================================
+# SUCCESS MESSAGE
+# ============================================================================
 echo ""
-echo -e "${GREEN}╔═══════════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║                                                   ║${NC}"
-echo -e "${GREEN}║          ✅ Installation Complete!               ║${NC}"
-echo -e "${GREEN}║                                                   ║${NC}"
-echo -e "${GREEN}╚═══════════════════════════════════════════════════╝${NC}"
+echo -e "${GREEN}╔══════════════════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║                                                      ║${NC}"
+echo -e "${GREEN}║     ✅ PLGames Board installation complete!         ║${NC}"
+echo -e "${GREEN}║                                                      ║${NC}"
+echo -e "${GREEN}╚══════════════════════════════════════════════════════╝${NC}"
 echo ""
-echo -e "${BLUE}📝 Next Steps:${NC}"
+echo -e "${BLUE}📝 NEXT STEPS:${NC}"
 echo ""
-echo -e "1. Open your browser and go to: ${GREEN}${BASE_URL}${NC}"
+echo -e "  1. Open browser:  ${CYAN}${BASE_URL}${NC}"
 echo ""
-echo -e "2. ${YELLOW}First-time setup:${NC}"
-echo "   • The first user to register will become the admin"
-echo "   • Create your account and start using PLGames Board"
+echo -e "  2. Create account (first user = admin)"
 echo ""
-echo -e "3. ${YELLOW}Useful commands:${NC}"
-echo "   • Check status:  docker compose ps"
-echo "   • View logs:     docker compose logs -f"
-echo "   • Stop:          docker compose down"
-echo "   • Restart:       docker compose restart"
+echo -e "  3. Start using PLGames Board!"
 echo ""
-echo -e "4. ${YELLOW}Documentation:${NC}"
-echo "   • README:        ~/plgames-board/README.md"
-echo "   • GitHub:        https://github.com/Leonid1095/PLGames-Board"
+echo -e "${BLUE}📋 USEFUL COMMANDS:${NC}"
+echo ""
+echo -e "  Status:        ${CYAN}docker compose ps${NC}"
+echo -e "  Logs:          ${CYAN}docker compose logs -f${NC}"
+echo -e "  Stop:          ${CYAN}docker compose down${NC}"
+echo -e "  Restart:       ${CYAN}docker compose restart${NC}"
+echo -e "  Update:        ${CYAN}git pull && docker compose pull && docker compose up -d${NC}"
 echo ""
 
 if [ "$DOMAIN" != "localhost" ]; then
-    echo -e "${YELLOW}⚠️  Important for production:${NC}"
-    echo "   • Make sure your domain's DNS A record points to this server's IP"
-    echo "   • Let's Encrypt will automatically issue HTTPS certificate"
-    echo "   • First HTTPS request may take a few seconds while certificate is issued"
+    echo -e "${YELLOW}⚠️  PRODUCTION SETUP:${NC}"
+    echo ""
+    echo -e "  • DNS: Point ${DOMAIN} A record to this server IP"
+    echo -e "  • Certificate: Auto-issued via Let's Encrypt (wait ~30 sec for first HTTPS)"
+    echo -e "  • Firewall: Ports ${HTTP_PORT}/${HTTPS_PORT} must be open"
     echo ""
 fi
 
+echo -e "${CYAN}Questions/Issues: https://github.com/Leonid1095/PLGames-Board/issues${NC}"
 echo -e "${GREEN}Happy collaborating! 🎮${NC}"
 echo ""
+
