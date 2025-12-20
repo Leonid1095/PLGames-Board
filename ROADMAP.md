@@ -1,9 +1,49 @@
 # 🗺️ PLGames Board - Дорожная карта развития
 
 **Дата создания:** 2024-12-01
-**Последнее обновление:** 2024-12-14
+**Последнее обновление:** 2024-12-20
 **Версия:** 1.0.0 → 2.0.0+
 **GitHub:** https://github.com/Leonid1095/PLGames-Board
+
+**Новое:** добавлен файл `AI_ONBOARDING.md` для первого запуска любого ИИ-агента. Он даёт краткую карту репозитория и список обязательных документов (`QUICK_AI_INSTRUCTIONS.txt`, `AI_DEPLOYMENT_GUIDE.md`, `ARCHITECTURE.md`, `ROADMAP.md`). Агент должен начинать работу с чтения этого файла.
+
+---
+
+## 🎯 Текущий статус (20 декабря 2024)
+
+### ✅ Исправлено: NestJS DI для CRM модуля
+
+**Проблема:** Backend падал с `UnknownDependenciesException` при запуске:
+- `CrmProjectResolver` не мог внедрить `PermissionService` 
+- `CrmIssueResolver` пытался внедрить несуществующий `PrismaService`
+
+**Решение (commits fba6adfcb, cf6fa6055):**
+
+1. **Добавлен `PermissionService`** в `core/permission/index.ts`:
+   - Метод `isWorkspaceMember(workspaceId, userId)` для проверки доступа
+   - Экспортирован в `PermissionModule`
+   - `CrmModule` импортирует `PermissionModule`
+
+2. **Исправлен импорт в `CrmIssueResolver`**:
+   ```typescript
+   // Было (неправильно):
+   import { PrismaService } from '../../base/prisma';
+   private readonly prisma: PrismaService
+   
+   // Стало (правильно):
+   import { PrismaClient } from '@prisma/client';
+   private readonly prisma: PrismaClient
+   ```
+
+**Проверка на production:**
+```bash
+git pull
+docker compose pull backend
+docker compose up -d --force-recreate backend
+docker compose logs -n 50 backend
+```
+
+Ждём GitHub Actions сборки нового образа (main-cf6fa6055), затем пересоздаём backend контейнер.
 
 ---
 
