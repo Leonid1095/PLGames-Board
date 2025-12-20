@@ -5,7 +5,7 @@ import pkg from '@prisma/client';
 const { IssueStatus: IssueStatusEnum, IssuePriority: IssuePriorityEnum, IssueType: IssueTypeEnum } = pkg;
 
 import { Auth, CurrentUser } from '../auth';
-import { PrismaService } from '../../base/prisma';
+import { PrismaClient } from '@prisma/client';
 import { PermissionService } from '../permission';
 import { CrmService } from './crm.service';
 import type { CrmCommentWithRelations, CrmIssueWithRelations, CrmProjectWithRelations, CrmSprintWithRelations, CrmTimeLogWithRelations } from './types';
@@ -492,7 +492,7 @@ export class CrmIssueResolver {
   constructor(
     private readonly crmService: CrmService,
     private readonly permission: PermissionService,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaClient
   ) {}
 
   @Query(() => CrmIssueType)
