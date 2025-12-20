@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { PrismaModule } from '../prisma';
 import { PermissionModule } from '../permission';
 import { StorageModule } from '../storage';
 import { UserAvatarController } from './controller';
@@ -10,7 +11,7 @@ import {
 } from './resolver';
 
 @Module({
-  imports: [StorageModule, PermissionModule],
+  imports: [PrismaModule, StorageModule, PermissionModule],
   providers: [UserResolver, UserManagementResolver, UserSettingsResolver],
   controllers: [UserAvatarController],
 })
