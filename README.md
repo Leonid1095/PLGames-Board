@@ -103,6 +103,20 @@ bash install.sh
 
 ## 📖 Documentation
 
+### Choose Your Path
+👉 **[📍 Documentation Guide](DOCS_GUIDE.md)** - Choose what to read based on your role
+
+### All Available Documents
+- **[DOCS_GUIDE.md](DOCS_GUIDE.md)** - Navigation guide for all documentation
+- **[INSTALLATION_QUICK.md](INSTALLATION_QUICK.md)** - For clients without experience
+- **[DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)** - For DevOps/SysAdmin (production)
+- **[AI_ONBOARDING.md](AI_ONBOARDING.md)** - For developers and AI agents
+- **[TECHNICAL_AUDIT.md](TECHNICAL_AUDIT.md)** - Deep technical analysis of DI system
+- **[SOLUTION_SUMMARY.md](SOLUTION_SUMMARY.md)** - All problems and solutions found
+- **[AI_README.md](AI_README.md)** - Internal README for AI agents
+- **[ROADMAP.md](ROADMAP.md)** - Current status and future plans
+
+### Quick Links
 - **[install.sh](install.sh)** - One-line production installer
 - **[docker-compose.yml](docker-compose.yml)** - Docker orchestration configuration
 - **[plgames/Dockerfile](plgames/Dockerfile)** - Multi-stage build for backend and frontend
