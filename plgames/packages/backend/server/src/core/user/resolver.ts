@@ -10,7 +10,7 @@ import {
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
-import type { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import GraphQLUpload from 'graphql-upload/GraphQLUpload.mjs';
 import { isNil, omitBy } from 'lodash-es';
 
