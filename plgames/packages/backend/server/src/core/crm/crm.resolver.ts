@@ -622,7 +622,7 @@ export class CrmSprintResolver {
   constructor(
     private readonly crmService: CrmService,
     private readonly permission: PermissionService,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaClient
   ) {}
 
   @Query(() => CrmSprintType)
@@ -731,7 +731,7 @@ export class CrmCommentResolver {
   constructor(
     private readonly crmService: CrmService,
     private readonly permission: PermissionService,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaClient
   ) {}
 
   @Mutation(() => CrmCommentType)
@@ -806,7 +806,7 @@ export class CrmTimeLogResolver {
   constructor(
     private readonly crmService: CrmService,
     private readonly permission: PermissionService,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaClient
   ) {}
 
   @Mutation(() => CrmTimeLogType)
