@@ -24,47 +24,36 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Rust (required for @affine/server-native, needs 1.82+)
-# Using multiple mirrors for reliability (Russia, China, official)
+# Try official first (works on GitHub Actions), then mirrors for Russia/China
 RUN set -e; \
-    RUSTUP_INSTALLED=0; \
-    # Try multiple sources in order of preference for Russia/China
-    for MIRROR in \
-        "https://rsproxy.cn/rustup-init.sh|https://rsproxy.cn|https://rsproxy.cn/rustup" \
-        "https://sh.rustup.rs|https://static.rust-lang.org|https://static.rust-lang.org/rustup" \
-        "https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup-init.sh|https://mirrors.tuna.tsinghua.edu.cn/rustup|https://mirrors.tuna.tsinghua.edu.cn/rustup"; \
-    do \
-        INIT_URL=$(echo $MIRROR | cut -d'|' -f1); \
-        DIST_SERVER=$(echo $MIRROR | cut -d'|' -f2); \
-        UPDATE_ROOT=$(echo $MIRROR | cut -d'|' -f3); \
-        echo "Trying Rust installation from: $INIT_URL"; \
-        export RUSTUP_DIST_SERVER="$DIST_SERVER"; \
-        export RUSTUP_UPDATE_ROOT="$UPDATE_ROOT"; \
-        if curl -sSfL --connect-timeout 30 --max-time 120 "$INIT_URL" -o rustup-init.sh; then \
-            chmod +x rustup-init.sh && \
-            sh rustup-init.sh -y --default-toolchain stable --profile minimal && \
-            rm rustup-init.sh && \
-            RUSTUP_INSTALLED=1 && \
-            echo "✓ Successfully installed Rust from $INIT_URL" && \
-            break; \
-        else \
-            echo "✗ Failed to download from $INIT_URL, trying next mirror..."; \
-            rm -f rustup-init.sh; \
-        fi; \
-    done; \
-    if [ $RUSTUP_INSTALLED -eq 0 ]; then \
-        echo "ERROR: Failed to install Rust from all mirrors"; \
+    echo "Installing Rust..."; \
+    # Try official rustup first (fastest on GitHub Actions)
+    if curl -sSfL --connect-timeout 15 --max-time 60 https://sh.rustup.rs -o rustup-init.sh 2>/dev/null; then \
+        echo "Using official rustup"; \
+        chmod +x rustup-init.sh && \
+        sh rustup-init.sh -y --default-toolchain stable --profile minimal && \
+        rm rustup-init.sh; \
+    # Fallback to Chinese mirror (for Russia/China)
+    elif curl -sSfL --connect-timeout 15 --max-time 60 https://rsproxy.cn/rustup-init.sh -o rustup-init.sh 2>/dev/null; then \
+        echo "Using rsproxy.cn mirror"; \
+        export RUSTUP_DIST_SERVER="https://rsproxy.cn"; \
+        export RUSTUP_UPDATE_ROOT="https://rsproxy.cn/rustup"; \
+        chmod +x rustup-init.sh && \
+        sh rustup-init.sh -y --default-toolchain stable --profile minimal && \
+        rm rustup-init.sh && \
+        # Configure cargo mirror only when using Chinese mirrors
+        mkdir -p ~/.cargo && \
+        echo '[source.crates-io]' > ~/.cargo/config.toml && \
+        echo 'replace-with = "ustc"' >> ~/.cargo/config.toml && \
+        echo '[source.ustc]' >> ~/.cargo/config.toml && \
+        echo 'registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"' >> ~/.cargo/config.toml; \
+    else \
+        echo "ERROR: Failed to install Rust"; \
         exit 1; \
     fi; \
-    # Configure cargo to use USTC mirror (China, works in Russia)
-    mkdir -p ~/.cargo && \
-    echo '[source.crates-io]' >> ~/.cargo/config.toml && \
-    echo 'replace-with = "ustc"' >> ~/.cargo/config.toml && \
-    echo '' >> ~/.cargo/config.toml && \
-    echo '[source.ustc]' >> ~/.cargo/config.toml && \
-    echo 'registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"' >> ~/.cargo/config.toml && \
-    echo '' >> ~/.cargo/config.toml && \
-    echo '[net]' >> ~/.cargo/config.toml && \
-    echo 'git-fetch-with-cli = true' >> ~/.cargo/config.toml
+    echo "✓ Rust installed successfully"; \
+    rustc --version; \
+    cargo --version
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Copy source code
@@ -89,66 +78,24 @@ ENV NODE_ENV=production
 RUN yarn install --mode=skip-build
 
 # Generate Prisma client (required for database access)
-# Simple approach: let Prisma download engines automatically
-# This works on GitHub Actions (outside Russia) and with VPN
-RUN set -e; \
-    echo "Generating Prisma client..."; \
-    echo "Prisma version info:"; \
-    yarn workspace @affine/server exec prisma --version || true; \
-    echo ""; \
-    \
-    # Try to generate Prisma client (with retries for network issues)
-    PRISMA_GENERATED=0; \
-    for i in 1 2 3; do \
-      echo "Attempting Prisma generate (attempt $i/3)..."; \
-      \
-      if timeout 300 yarn workspace @affine/server exec prisma generate 2>&1; then \
-        PRISMA_GENERATED=1 && \
-        echo "✓ Prisma client generated successfully" && \
-        break; \
-      else \
-        EXIT_CODE=$?; \
-        echo "✗ Prisma generate failed on attempt $i/3 (exit code: $EXIT_CODE)"; \
-        \
-        if [ $i -lt 3 ]; then \
-          echo "Retrying in 10 seconds..."; \
-          sleep 10; \
-        fi; \
-      fi; \
-    done; \
-    \
-    if [ $PRISMA_GENERATED -eq 0 ]; then \
-      echo ""; \
-      echo "====== PRISMA GENERATION FAILED ======"; \
-      echo "ERROR: Failed to generate Prisma client after 3 attempts"; \
-      echo ""; \
-      echo "This usually means:"; \
-      echo "  1. binaries.prisma.sh is blocked (common in Russia/China)"; \
-      echo "  2. Network connectivity issues"; \
-      echo "  3. Prisma version compatibility issues"; \
-      echo ""; \
-      echo "Solutions:"; \
-      echo "  - Build on GitHub Actions (automatic for this repo)"; \
-      echo "  - Use pre-built Docker images from ghcr.io"; \
-      echo "  - Build with VPN connection"; \
-      echo ""; \
-      exit 1; \
-    fi; \
-    \
-    # Verify Prisma client was generated
-    if [ ! -d /workspace/node_modules/.prisma/client ]; then \
-      echo "ERROR: Prisma client directory not found after generation"; \
-      exit 1; \
-    fi; \
-    echo "✓ Prisma client verification passed"
+RUN echo "Generating Prisma client..." && \
+    yarn workspace @affine/server exec prisma generate && \
+    test -d /workspace/node_modules/.prisma/client && \
+    echo "✓ Prisma client generated successfully"
 
 # Build templates
 RUN yarn workspace @affine/templates build
 
-# Build backend components
-RUN yarn workspace @affine/reader build && \
+# Build backend components (with verbose output for debugging)
+RUN echo "Building @affine/reader..." && \
+    yarn workspace @affine/reader build && \
+    echo "✓ @affine/reader built" && \
+    echo "Building @affine/server-native..." && \
     yarn workspace @affine/server-native build && \
-    yarn workspace @affine/server build
+    echo "✓ @affine/server-native built" && \
+    echo "Building @affine/server..." && \
+    yarn workspace @affine/server build && \
+    echo "✓ @affine/server built"
 
 # Build frontend with timeout (max 30 minutes)
 RUN timeout 1800 yarn plgames build -p @affine/web || \
