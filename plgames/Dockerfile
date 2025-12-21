@@ -185,6 +185,9 @@ COPY --from=builder /workspace/packages/backend/server/schema.prisma ./schema.pr
 # Copy all node_modules from workspace root (Yarn workspaces use hoisting)
 COPY --from=builder /workspace/node_modules ./node_modules
 
+# Copy Prisma client (required for runtime)
+COPY --from=builder /workspace/node_modules/.prisma ./node_modules/.prisma
+
 # Copy built workspace packages that backend depends on
 COPY --from=builder /workspace/packages/common/reader/dist ./node_modules/@affine/reader/dist
 COPY --from=builder /workspace/packages/common/reader/package.json ./node_modules/@affine/reader/package.json
