@@ -24,37 +24,13 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Rust (required for @affine/server-native, needs 1.82+)
-# Try official first (works on GitHub Actions), then mirrors for Russia/China
-RUN set -e; \
-    echo "Installing Rust..."; \
-    # Try official rustup first (fastest on GitHub Actions)
-    if curl -sSfL --connect-timeout 15 --max-time 60 https://sh.rustup.rs -o rustup-init.sh 2>/dev/null; then \
-        echo "Using official rustup"; \
-        chmod +x rustup-init.sh && \
-        sh rustup-init.sh -y --default-toolchain stable --profile minimal && \
-        rm rustup-init.sh; \
-    # Fallback to Chinese mirror (for Russia/China)
-    elif curl -sSfL --connect-timeout 15 --max-time 60 https://rsproxy.cn/rustup-init.sh -o rustup-init.sh 2>/dev/null; then \
-        echo "Using rsproxy.cn mirror"; \
-        export RUSTUP_DIST_SERVER="https://rsproxy.cn"; \
-        export RUSTUP_UPDATE_ROOT="https://rsproxy.cn/rustup"; \
-        chmod +x rustup-init.sh && \
-        sh rustup-init.sh -y --default-toolchain stable --profile minimal && \
-        rm rustup-init.sh && \
-        # Configure cargo mirror only when using Chinese mirrors
-        mkdir -p ~/.cargo && \
-        echo '[source.crates-io]' > ~/.cargo/config.toml && \
-        echo 'replace-with = "ustc"' >> ~/.cargo/config.toml && \
-        echo '[source.ustc]' >> ~/.cargo/config.toml && \
-        echo 'registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"' >> ~/.cargo/config.toml; \
-    else \
-        echo "ERROR: Failed to install Rust"; \
-        exit 1; \
-    fi; \
-    echo "✓ Rust installed successfully"; \
-    rustc --version; \
-    cargo --version
+# GitHub Actions has full network access, use official rustup directly
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal && \
+    echo "✓ Rust installed successfully"
 ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Verify Rust installation
+RUN rustc --version && cargo --version
 
 # Copy source code
 COPY . .
