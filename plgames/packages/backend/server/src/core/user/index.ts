@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { PrismaModule } from '../prisma';
+import { PrismaModule } from '../../base/prisma';
 import { PermissionModule } from '../permission';
 import { StorageModule } from '../storage';
 import { UserAvatarController } from './controller';
