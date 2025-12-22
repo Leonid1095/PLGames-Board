@@ -1,4 +1,4 @@
-import { Headers } from '@nestjs/common';
+import { Headers, Inject } from '@nestjs/common';
 import {
   Args,
   Field,
@@ -467,7 +467,7 @@ export class SubscriptionResolver {
 @Resolver(() => UserType)
 export class UserSubscriptionResolver {
   constructor(
-    private readonly db: PrismaClientType,
+    @Inject(PrismaClient) private readonly db: PrismaClientType,
     private readonly rcHandler: RevenueCatWebhookHandler
   ) { }
 
@@ -666,7 +666,7 @@ export class UserSubscriptionResolver {
 export class WorkspaceSubscriptionResolver {
   constructor(
     private readonly service: WorkspaceSubscriptionManager,
-    private readonly db: PrismaClientType,
+    @Inject(PrismaClient) private readonly db: PrismaClientType,
     private readonly ac: AccessController
   ) { }
 

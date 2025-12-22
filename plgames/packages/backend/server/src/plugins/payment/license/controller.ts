@@ -6,6 +6,7 @@ import {
   Get,
   Headers,
   HttpStatus,
+  Inject,
   Logger,
   Param,
   Post,
@@ -52,7 +53,7 @@ export class LicenseController {
   private readonly logger = new Logger(LicenseController.name);
 
   constructor(
-    private readonly db: PrismaClientType,
+    @Inject(PrismaClient) private readonly db: PrismaClientType,
     private readonly mutex: Mutex,
     private readonly subscription: SubscriptionService,
     private readonly manager: SelfhostTeamSubscriptionManager,

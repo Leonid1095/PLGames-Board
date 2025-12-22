@@ -2,6 +2,7 @@ import './config';
 
 import { Module } from '@nestjs/common';
 
+import { PrismaModule } from '../../base/prisma';
 import { ServerConfigModule } from '../../core';
 import { FeatureModule } from '../../core/features';
 import { MailModule } from '../../core/mail';
@@ -34,6 +35,7 @@ import { StripeWebhook } from './webhook';
 
 @Module({
   imports: [
+    PrismaModule,
     FeatureModule,
     QuotaModule,
     UserModule,

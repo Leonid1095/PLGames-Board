@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import type { PrismaClient as PrismaClientType } from '@prisma/client';
 import pkg from '@prisma/client';
@@ -25,7 +25,7 @@ declare global {
 @Injectable()
 export class SubscriptionCronJobs {
   constructor(
-    private readonly db: PrismaClientType,
+    @Inject(PrismaClient) private readonly db: PrismaClientType,
     private readonly event: EventBus,
     private readonly queue: JobQueue,
     private readonly rcHandler: RevenueCatWebhookHandler

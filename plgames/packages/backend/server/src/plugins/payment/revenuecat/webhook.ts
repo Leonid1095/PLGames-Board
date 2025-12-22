@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { PrismaClient as PrismaClientType, IapStore as IapStoreType } from '@prisma/client';
 import pkg from '@prisma/client';
 const { IapStore, PrismaClient, Provider } = pkg;
@@ -27,7 +27,7 @@ export class RevenueCatWebhookHandler {
 
   constructor(
     private readonly rc: RevenueCatService,
-    private readonly db: PrismaClientType,
+    @Inject(PrismaClient) private readonly db: PrismaClientType,
     private readonly config: Config,
     private readonly event: EventBus,
     private readonly queue: JobQueue
