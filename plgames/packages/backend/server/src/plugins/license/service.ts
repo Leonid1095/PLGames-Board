@@ -1,6 +1,6 @@
 import { createDecipheriv, createVerify } from 'node:crypto';
 
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import type { InstalledLicense as InstalledLicenseType, PrismaClient as PrismaClientType } from '@prisma/client';
 import pkg from '@prisma/client';
@@ -58,7 +58,7 @@ export class LicenseService {
   private readonly logger = new Logger(LicenseService.name);
 
   constructor(
-    private readonly db: PrismaClientType,
+    @Inject(PrismaClient) private readonly db: PrismaClientType,
     private readonly event: EventBus,
     private readonly models: Models,
     private readonly crypto: CryptoHelper
