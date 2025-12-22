@@ -1,10 +1,8 @@
 import { createDecipheriv, createVerify } from 'node:crypto';
 
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import type { InstalledLicense as InstalledLicenseType, PrismaClient as PrismaClientType } from '@prisma/client';
-import pkg from '@prisma/client';
-const { PrismaClient } = pkg;
 import { z } from 'zod';
 
 import {
@@ -18,6 +16,7 @@ import {
   UserFriendlyError,
   WorkspaceLicenseAlreadyExists,
 } from '../../base';
+import { PrismaFactory } from '../../base/prisma';
 import { Models } from '../../models';
 import {
   SubscriptionPlan,
@@ -56,13 +55,16 @@ const TeamLicenseSchema = z
 @Injectable()
 export class LicenseService {
   private readonly logger = new Logger(LicenseService.name);
+  private readonly db: PrismaClientType;
 
   constructor(
-    @Inject(PrismaClient) private readonly db: PrismaClientType,
+    private readonly prismaFactory: PrismaFactory,
     private readonly event: EventBus,
     private readonly models: Models,
     private readonly crypto: CryptoHelper
-  ) { }
+  ) {
+    this.db = this.prismaFactory.get();
+  }
 
   @OnEvent('workspace.subscription.activated')
   async onWorkspaceSubscriptionUpdated({
