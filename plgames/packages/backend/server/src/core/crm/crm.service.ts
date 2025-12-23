@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { IssueStatus } from '@prisma/client';
 
-import { CrmIssueModel, CrmProjectModel } from '../../models';
+import { Models } from '../../models';
 import type {
   CreateCommentInput,
   CreateIssueInput,
@@ -22,10 +22,15 @@ import type {
 
 @Injectable()
 export class CrmService {
-  constructor(
-    private readonly projectModel: CrmProjectModel,
-    private readonly issueModel: CrmIssueModel
-  ) {}
+  constructor(private readonly models: Models) {}
+
+  private get projectModel() {
+    return this.models.crmProject;
+  }
+
+  private get issueModel() {
+    return this.models.crmIssue;
+  }
 
   // ========== Projects ==========
 

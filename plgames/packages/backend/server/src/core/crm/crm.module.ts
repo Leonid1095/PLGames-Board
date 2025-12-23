@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 
-import { CrmIssueModel, CrmProjectModel } from '../../models';
 import { PermissionModule } from '../permission';
 import {
   CrmCommentResolver,
@@ -15,8 +14,6 @@ import { CrmService } from './crm.service';
   imports: [PermissionModule],
   providers: [
     CrmService,
-    CrmProjectModel,
-    CrmIssueModel,
     CrmProjectResolver,
     CrmIssueResolver,
     CrmSprintResolver,
