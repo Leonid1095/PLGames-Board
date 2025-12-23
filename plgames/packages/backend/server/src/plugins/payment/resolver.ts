@@ -1,4 +1,4 @@
-import { Headers, Inject } from '@nestjs/common';
+import { Headers } from '@nestjs/common';
 import {
   Args,
   Field,
@@ -14,7 +14,7 @@ import {
 } from '@nestjs/graphql';
 import type { User as UserType, PrismaClient as PrismaClientType, Provider as ProviderType } from '@prisma/client';
 import pkg from '@prisma/client';
-const { PrismaClient, Provider } = pkg;
+const { Provider } = pkg;
 import { GraphQLJSONObject } from 'graphql-scalars';
 import { groupBy } from 'lodash-es';
 import Stripe from 'stripe';
@@ -28,6 +28,7 @@ import {
   Throttle,
   WorkspaceIdRequiredToUpdateTeamSubscription,
 } from '../../base';
+import { PrismaFactory } from '../../base/prisma';
 import { CurrentUser, Public } from '../../core/auth';
 import { AccessController } from '../../core/permission';
 import { UserType } from '../../core/user';
@@ -466,10 +467,14 @@ export class SubscriptionResolver {
 
 @Resolver(() => UserType)
 export class UserSubscriptionResolver {
+  private readonly db: PrismaClientType;
+
   constructor(
-    @Inject(PrismaClient) private readonly db: PrismaClientType,
+    private readonly prismaFactory: PrismaFactory,
     private readonly rcHandler: RevenueCatWebhookHandler
-  ) { }
+  ) {
+    this.db = this.prismaFactory.get();
+  }
 
   private normalizeSubscription(s: Subscription) {
     if (
@@ -664,11 +669,15 @@ export class UserSubscriptionResolver {
 
 @Resolver(() => WorkspaceType)
 export class WorkspaceSubscriptionResolver {
+  private readonly db: PrismaClientType;
+
   constructor(
     private readonly service: WorkspaceSubscriptionManager,
-    @Inject(PrismaClient) private readonly db: PrismaClientType,
+    private readonly prismaFactory: PrismaFactory,
     private readonly ac: AccessController
-  ) { }
+  ) {
+    this.db = this.prismaFactory.get();
+  }
 
   @ResolveField(() => SubscriptionType, {
     nullable: true,

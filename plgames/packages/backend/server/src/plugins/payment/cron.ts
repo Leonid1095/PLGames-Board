@@ -1,10 +1,11 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import type { PrismaClient as PrismaClientType } from '@prisma/client';
 import pkg from '@prisma/client';
-const { PrismaClient, Provider } = pkg;
+const { Provider } = pkg;
 
 import { EventBus, JobQueue, OnJob } from '../../base';
+import { PrismaFactory } from '../../base/prisma';
 import { RevenueCatWebhookHandler } from './revenuecat';
 import {
   SubscriptionPlan,
@@ -24,12 +25,16 @@ declare global {
 
 @Injectable()
 export class SubscriptionCronJobs {
+  private readonly db: PrismaClientType;
+
   constructor(
-    @Inject(PrismaClient) private readonly db: PrismaClientType,
+    private readonly prismaFactory: PrismaFactory,
     private readonly event: EventBus,
     private readonly queue: JobQueue,
     private readonly rcHandler: RevenueCatWebhookHandler
-  ) { }
+  ) {
+    this.db = this.prismaFactory.get();
+  }
 
   private getDateRange(after: number, base: number | Date = Date.now()) {
     const start = new Date(base);

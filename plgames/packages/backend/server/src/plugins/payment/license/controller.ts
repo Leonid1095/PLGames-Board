@@ -6,15 +6,12 @@ import {
   Get,
   Headers,
   HttpStatus,
-  Inject,
   Logger,
   Param,
   Post,
   Res,
 } from '@nestjs/common';
 import type { Subscription as SubscriptionType, PrismaClient as PrismaClientType } from '@prisma/client';
-import pkg from '@prisma/client';
-const { PrismaClient } = pkg;
 import type { Response } from 'express';
 import Stripe from 'stripe';
 import { z } from 'zod';
@@ -26,6 +23,7 @@ import {
   LicenseNotFound,
   Mutex,
 } from '../../../base';
+import { PrismaFactory } from '../../../base/prisma';
 import { Public } from '../../../core/auth';
 import { SelfhostTeamSubscriptionManager } from '../manager/selfhost';
 import { SubscriptionService } from '../service';
@@ -51,14 +49,17 @@ const UpdateRecurringParams = z.object({
 @Controller('/api/team/licenses')
 export class LicenseController {
   private readonly logger = new Logger(LicenseController.name);
+  private readonly db: PrismaClientType;
 
   constructor(
-    @Inject(PrismaClient) private readonly db: PrismaClientType,
+    private readonly prismaFactory: PrismaFactory,
     private readonly mutex: Mutex,
     private readonly subscription: SubscriptionService,
     private readonly manager: SelfhostTeamSubscriptionManager,
     private readonly stripeProvider: StripeFactory
-  ) { }
+  ) {
+    this.db = this.prismaFactory.get();
+  }
 
   @Post('/:license/activate')
   async activate(@Res() res: Response, @Param('license') key: string) {

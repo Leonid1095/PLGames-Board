@@ -1,7 +1,5 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import type { User as UserType, UserStripeCustomer as UserStripeCustomerType, PrismaClient as PrismaClientType } from '@prisma/client';
-import pkg from '@prisma/client';
-const { PrismaClient } = pkg;
 import Stripe from 'stripe';
 import { z } from 'zod';
 
@@ -25,6 +23,7 @@ import {
   UnsupportedSubscriptionPlan,
   UserNotFound,
 } from '../../base';
+import { PrismaFactory } from '../../base/prisma';
 import { CurrentUser } from '../../core/auth';
 import { FeatureService } from '../../core/features';
 import { Models } from '../../models';
@@ -76,16 +75,19 @@ export { CheckoutParams };
 export class SubscriptionService {
   private readonly logger = new Logger(SubscriptionService.name);
   private readonly scheduleManager = new ScheduleManager(this.stripeProvider);
+  private readonly db: PrismaClientType;
 
   constructor(
     private readonly stripeProvider: StripeFactory,
-    @Inject(PrismaClient) private readonly db: PrismaClientType,
+    private readonly prismaFactory: PrismaFactory,
     private readonly feature: FeatureService,
     private readonly models: Models,
     private readonly userManager: UserSubscriptionManager,
     private readonly workspaceManager: WorkspaceSubscriptionManager,
     private readonly selfhostManager: SelfhostTeamSubscriptionManager
-  ) { }
+  ) {
+    this.db = this.prismaFactory.get();
+  }
 
   get stripe() {
     return this.stripeProvider.stripe;

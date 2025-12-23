@@ -1,12 +1,13 @@
 import { randomUUID } from 'node:crypto';
 
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Transactional } from '@nestjs-cls/transactional';
 import type { Prisma as PrismaNamespace, PrismaClient as PrismaClientType } from '@prisma/client';
 import pkg from '@prisma/client';
-const { Prisma, PrismaClient } = pkg;
+const { Prisma } = pkg;
 
 import { PaginationInput } from '../base';
+import { PrismaFactory } from '../base/prisma';
 import { BaseModel } from './base';
 import {
   type BlobChunkSimilarity,
@@ -20,8 +21,11 @@ import {
 
 @Injectable()
 export class CopilotWorkspaceConfigModel extends BaseModel {
-  constructor(@Inject(PrismaClient) private readonly database: PrismaClientType) {
+  private readonly database: PrismaClientType;
+
+  constructor(private readonly prismaFactory: PrismaFactory) {
     super();
+    this.database = this.prismaFactory.get();
   }
 
   @Transactional()

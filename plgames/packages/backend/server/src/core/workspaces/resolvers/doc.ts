@@ -10,10 +10,7 @@ import {
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
-import { Inject } from '@nestjs/common';
 import type { PrismaClient as PrismaClientType } from '@prisma/client';
-import pkg from '@prisma/client';
-const { PrismaClient } = pkg;
 
 import {
   Cache,
@@ -30,6 +27,7 @@ import {
   PaginationInput,
   registerObjectType,
 } from '../../../base';
+import { PrismaFactory } from '../../../base/prisma';
 import { Models, PublicDocMode } from '../../../models';
 import { CurrentUser } from '../../auth';
 import { Editor } from '../../doc';
@@ -200,16 +198,19 @@ class WorkspaceDocMeta {
 @Resolver(() => WorkspaceType)
 export class WorkspaceDocResolver {
   private readonly logger = new Logger(WorkspaceDocResolver.name);
+  /**
+   * @deprecated migrate to models
+   */
+  private readonly prisma: PrismaClientType;
 
   constructor(
-    /**
-     * @deprecated migrate to models
-     */
-    @Inject(PrismaClient) private readonly prisma: PrismaClientType,
+    private readonly prismaFactory: PrismaFactory,
     private readonly ac: AccessController,
     private readonly models: Models,
     private readonly cache: Cache
-  ) { }
+  ) {
+    this.prisma = this.prismaFactory.get();
+  }
 
 
   @ResolveField(() => WorkspaceDocMeta, {

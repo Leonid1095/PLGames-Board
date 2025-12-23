@@ -1,7 +1,7 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import type { PrismaClient as PrismaClientType, IapStore as IapStoreType } from '@prisma/client';
 import pkg from '@prisma/client';
-const { IapStore, PrismaClient, Provider } = pkg;
+const { IapStore, Provider } = pkg;
 
 import {
   Config,
@@ -13,6 +13,7 @@ import {
   OnJob,
   sleep,
 } from '../../../base';
+import { PrismaFactory } from '../../../base/prisma';
 import { SubscriptionStatus } from '../types';
 import { RcEvent } from './controller';
 import { resolveProductMapping } from './map';
@@ -24,14 +25,17 @@ const REFRESH_MAX_TIMES = 10 * OneMinute;
 @Injectable()
 export class RevenueCatWebhookHandler {
   private readonly logger = new Logger(RevenueCatWebhookHandler.name);
+  private readonly db: PrismaClientType;
 
   constructor(
     private readonly rc: RevenueCatService,
-    @Inject(PrismaClient) private readonly db: PrismaClientType,
+    private readonly prismaFactory: PrismaFactory,
     private readonly config: Config,
     private readonly event: EventBus,
     private readonly queue: JobQueue
-  ) { }
+  ) {
+    this.db = this.prismaFactory.get();
+  }
 
   @OnEvent('revenuecat.webhook')
   async onWebhook(evt: { appUserId?: string; event: RcEvent }) {
