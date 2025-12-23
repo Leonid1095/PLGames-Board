@@ -19,7 +19,7 @@ const clientProvider: Provider = {
 @Global()
 @Module({
   providers: [PrismaFactory, clientProvider],
-  exports: [clientProvider],
+  exports: [PrismaFactory, clientProvider],
 })
 export class PrismaModule { }
 export { PrismaFactory };
