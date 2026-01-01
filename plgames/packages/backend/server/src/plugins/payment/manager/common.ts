@@ -1,3 +1,4 @@
+import { Inject } from '@nestjs/common';
 import type { UserStripeCustomer as UserStripeCustomerType, PrismaClient as PrismaClientType } from '@prisma/client';
 import pkg from '@prisma/client';
 const { PrismaClient } = pkg;
@@ -64,7 +65,7 @@ export abstract class SubscriptionManager {
   protected readonly scheduleManager = new ScheduleManager(this.stripeProvider);
   constructor(
     protected readonly stripeProvider: StripeFactory,
-    protected readonly db: PrismaClientType
+    @Inject(PrismaClient) protected readonly db: PrismaClientType
   ) { }
 
   get stripe() {

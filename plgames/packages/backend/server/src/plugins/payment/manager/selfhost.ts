@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { UserStripeCustomer as UserStripeCustomerType, PrismaClient as PrismaClientType } from '@prisma/client';
 import pkg from '@prisma/client';
 const { PrismaClient, Provider } = pkg;
@@ -46,7 +46,7 @@ export const SelfhostTeamSubscriptionIdentity = z.object({
 export class SelfhostTeamSubscriptionManager extends SubscriptionManager {
   constructor(
     stripeProvider: StripeFactory,
-    db: PrismaClientType,
+    @Inject(PrismaClient) db: PrismaClientType,
     private readonly url: URLHelper,
     private readonly mailer: Mailer
   ) {

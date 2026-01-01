@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { UserStripeCustomer as UserStripeCustomerType, PrismaClient as PrismaClientType } from '@prisma/client';
 import pkg from '@prisma/client';
 const { PrismaClient } = pkg;
@@ -59,7 +59,7 @@ export const UserSubscriptionCheckoutArgs = z.object({
 export class UserSubscriptionManager extends SubscriptionManager {
   constructor(
     stripeProvider: StripeFactory,
-    db: PrismaClientType,
+    @Inject(PrismaClient) db: PrismaClientType,
     private readonly config: Config,
     private readonly feature: FeatureService,
     private readonly event: EventBus,
