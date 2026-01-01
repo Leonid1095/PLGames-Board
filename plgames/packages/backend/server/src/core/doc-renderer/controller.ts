@@ -224,7 +224,9 @@ export class DocRendererController {
 
       return assets;
     } catch (e) {
-      if (env.prod) {
+      // In selfhosted or dev mode, missing assets-manifest.json is acceptable
+      // The frontend is served separately and may not have built these assets
+      if (env.prod && !env.selfhosted) {
         throw e;
       } else {
         return defaultAssets;
