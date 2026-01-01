@@ -1,11 +1,10 @@
 import { Args, Field, ID, InputType, Int, Mutation, ObjectType, Parent, Query, registerEnumType, ResolveField, Resolver } from '@nestjs/graphql';
-import { ForbiddenException, UseGuards } from '@nestjs/common';
-import type { IssueStatus, IssuePriority, IssueType } from '@prisma/client';
+import { ForbiddenException, Inject, UseGuards } from '@nestjs/common';
+import type { IssueStatus, IssuePriority, IssueType, PrismaClient as PrismaClientType } from '@prisma/client';
 import pkg from '@prisma/client';
-const { IssueStatus: IssueStatusEnum, IssuePriority: IssuePriorityEnum, IssueType: IssueTypeEnum } = pkg;
+const { IssueStatus: IssueStatusEnum, IssuePriority: IssuePriorityEnum, IssueType: IssueTypeEnum, PrismaClient } = pkg;
 
 import { Auth, CurrentUser } from '../auth';
-import { PrismaClient } from '@prisma/client';
 import { PermissionService } from '../permission';
 import { CrmService } from './crm.service';
 import type { CrmCommentWithRelations, CrmIssueWithRelations, CrmProjectWithRelations, CrmSprintWithRelations, CrmTimeLogWithRelations } from './types';
@@ -492,7 +491,7 @@ export class CrmIssueResolver {
   constructor(
     private readonly crmService: CrmService,
     private readonly permission: PermissionService,
-    private readonly prisma: PrismaClient
+    @Inject(PrismaClient) private readonly prisma: PrismaClientType
   ) {}
 
   @Query(() => CrmIssueType)
@@ -622,7 +621,7 @@ export class CrmSprintResolver {
   constructor(
     private readonly crmService: CrmService,
     private readonly permission: PermissionService,
-    private readonly prisma: PrismaClient
+    @Inject(PrismaClient) private readonly prisma: PrismaClientType
   ) {}
 
   @Query(() => CrmSprintType)
@@ -731,7 +730,7 @@ export class CrmCommentResolver {
   constructor(
     private readonly crmService: CrmService,
     private readonly permission: PermissionService,
-    private readonly prisma: PrismaClient
+    @Inject(PrismaClient) private readonly prisma: PrismaClientType
   ) {}
 
   @Mutation(() => CrmCommentType)
@@ -806,7 +805,7 @@ export class CrmTimeLogResolver {
   constructor(
     private readonly crmService: CrmService,
     private readonly permission: PermissionService,
-    private readonly prisma: PrismaClient
+    @Inject(PrismaClient) private readonly prisma: PrismaClientType
   ) {}
 
   @Mutation(() => CrmTimeLogType)

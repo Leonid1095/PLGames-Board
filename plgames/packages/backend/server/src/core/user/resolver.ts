@@ -1,3 +1,4 @@
+import { Inject } from '@nestjs/common';
 import {
   Args,
   createUnionType,
@@ -10,7 +11,9 @@ import {
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient as PrismaClientType } from '@prisma/client';
+import pkg from '@prisma/client';
+const { PrismaClient } = pkg;
 import GraphQLUpload from 'graphql-upload/GraphQLUpload.mjs';
 import { isNil, omitBy } from 'lodash-es';
 
@@ -235,7 +238,7 @@ const UserImportResultType = createUnionType({
 @Resolver(() => UserType)
 export class UserManagementResolver {
   constructor(
-    private readonly db: PrismaClient,
+    @Inject(PrismaClient) private readonly db: PrismaClientType,
     private readonly models: Models
   ) { }
 

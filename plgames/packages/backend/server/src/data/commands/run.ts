@@ -1,6 +1,8 @@
-import { Logger } from '@nestjs/common';
+import { Inject, Logger } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient as PrismaClientType } from '@prisma/client';
+import pkg from '@prisma/client';
+const { PrismaClient } = pkg;
 import { once } from 'lodash-es';
 import { Command, CommandRunner } from 'nest-commander';
 
@@ -9,8 +11,8 @@ import * as migrationImports from '../migrations';
 interface Migration {
   name: string;
   always?: boolean;
-  up: (db: PrismaClient, injector: ModuleRef) => Promise<void>;
-  down: (db: PrismaClient, injector: ModuleRef) => Promise<void>;
+  up: (db: PrismaClientType, injector: ModuleRef) => Promise<void>;
+  down: (db: PrismaClientType, injector: ModuleRef) => Promise<void>;
   order: number;
 }
 
@@ -42,7 +44,7 @@ export const collectMigrations = once(() => {
 export class RunCommand extends CommandRunner {
   logger = new Logger(RunCommand.name);
   constructor(
-    private readonly db: PrismaClient,
+    @Inject(PrismaClient) private readonly db: PrismaClientType,
     private readonly injector: ModuleRef
   ) {
     super();
@@ -139,7 +141,7 @@ export class RevertCommand extends CommandRunner {
   logger = new Logger(RevertCommand.name);
 
   constructor(
-    private readonly db: PrismaClient,
+    @Inject(PrismaClient) private readonly db: PrismaClientType,
     private readonly injector: ModuleRef
   ) {
     super();
