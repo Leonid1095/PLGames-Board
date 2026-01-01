@@ -153,6 +153,21 @@ export class OpenRouterProvider extends CopilotProvider<OpenRouterConfig> {
 
   #instance!: ReturnType<typeof createOpenAICompatible>;
 
+  override configured(): boolean {
+    return !!this.config.apiKey;
+  }
+
+  protected override setup() {
+    super.setup();
+    if (this.configured()) {
+      this.#instance = createOpenAICompatible({
+        name: 'openrouter',
+        apiKey: this.config.apiKey,
+        baseURL: this.config.baseURL || 'https://openrouter.ai/api/v1',
+      });
+    }
+  }
+
   handleError(e: any, model: string, options: any) {
     if (e instanceof UserFriendlyError) {
       return e;
