@@ -27,7 +27,7 @@ class UserInfo {
   @Field()
   email!: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   avatarUrl?: string | null;
 }
 
@@ -42,7 +42,7 @@ class CrmProjectType {
   @Field()
   key!: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   description?: string | null;
 
   @Field(() => ID)
@@ -72,7 +72,7 @@ class CrmIssueType {
   @Field()
   title!: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   description?: string | null;
 
   @Field(() => IssueStatusEnum)
@@ -135,7 +135,7 @@ class CrmSprintType {
   @Field()
   name!: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   goal?: string | null;
 
   @Field(() => ID)
@@ -198,7 +198,7 @@ class CrmTimeLogType {
   @Field(() => Int)
   timeSpent!: number;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   description?: string | null;
 
   @Field(() => Date)
@@ -221,7 +221,7 @@ class CreateProjectInput {
   @Field()
   key!: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   description?: string;
 
   @Field(() => ID)
@@ -233,13 +233,13 @@ class CreateProjectInput {
 
 @InputType()
 class UpdateProjectInput {
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   name?: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   key?: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   description?: string;
 
   @Field(() => ID, { nullable: true })
@@ -251,7 +251,7 @@ class CreateIssueInput {
   @Field()
   title!: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   description?: string;
 
   @Field(() => ID)
@@ -287,10 +287,10 @@ class CreateIssueInput {
 
 @InputType()
 class UpdateIssueInput {
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   title?: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   description?: string;
 
   @Field(() => ID, { nullable: true })
@@ -320,7 +320,7 @@ class CreateSprintInput {
   @Field()
   name!: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   goal?: string;
 
   @Field(() => ID)
@@ -335,10 +335,10 @@ class CreateSprintInput {
 
 @InputType()
 class UpdateSprintInput {
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   name?: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   goal?: string;
 
   @Field(() => Date, { nullable: true })
@@ -347,7 +347,7 @@ class UpdateSprintInput {
   @Field(() => Date, { nullable: true })
   endDate?: Date;
 
-  @Field({ nullable: true })
+  @Field(() => Boolean, { nullable: true })
   isActive?: boolean;
 }
 
@@ -374,7 +374,7 @@ class CreateTimeLogInput {
   @Field(() => Int)
   timeSpent!: number;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   description?: string;
 
   @Field(() => Date)
