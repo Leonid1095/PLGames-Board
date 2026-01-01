@@ -1,6 +1,8 @@
-import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { Transactional } from '@nestjs-cls/transactional';
-import type { Prisma, PrismaClient } from '@prisma/client';
+import type { Prisma, PrismaClient as PrismaClientType } from '@prisma/client';
+import pkg from '@prisma/client';
+const { PrismaClient } = pkg;
 
 import { Config, OnEvent } from '../../../base';
 import {
@@ -24,7 +26,7 @@ export class PromptService implements OnApplicationBootstrap {
 
   constructor(
     private readonly config: Config,
-    private readonly db: PrismaClient
+    @Inject(PrismaClient) private readonly db: PrismaClientType
   ) { }
 
   async onApplicationBootstrap() {

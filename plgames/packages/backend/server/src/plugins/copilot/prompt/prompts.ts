@@ -2113,7 +2113,7 @@ export const prompts: Prompt[] = [
   ...workflows,
 ];
 
-export async function refreshPrompts(db: PrismaClient) {
+export async function refreshPrompts(db: PrismaClientType) {
   const needToSkip = await db.aiPrompt
     .findMany({
       where: { modified: true },
