@@ -1,7 +1,15 @@
-const BASE_URL =
-  process.env.PLG_BASE_URL?.replace(/\/+$/, '') || 'http://localhost:3000';
+// For browser runtime, use window.location.origin as base URL
+// This ensures selfhosted deployments work without rebuild
+const getBaseUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return 'http://localhost:3000';
+};
 
-const SUPPORT_EMAIL = process.env.PLG_SUPPORT_EMAIL || 'support@localhost';
+const BASE_URL = getBaseUrl();
+
+const SUPPORT_EMAIL = 'support@plgames.pro';
 
 export const BRAND = {
   productName: 'PLGames',
