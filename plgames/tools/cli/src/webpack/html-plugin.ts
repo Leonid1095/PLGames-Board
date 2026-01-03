@@ -10,11 +10,13 @@ import type { Compiler, WebpackPluginInstance } from 'webpack';
 import webpack from 'webpack';
 
 export const getPublicPath = (BUILD_CONFIG: BUILD_CONFIG_TYPE) => {
-  const { BUILD_TYPE } = process.env;
+  // PUBLIC_PATH environment variable takes precedence
+  // For self-hosted deployments, this should always be '/'
   if (typeof process.env.PUBLIC_PATH === 'string') {
     return process.env.PUBLIC_PATH;
   }
 
+  // Local development and native apps always use root path
   if (
     BUILD_CONFIG.debug ||
     BUILD_CONFIG.distribution === 'desktop' ||
@@ -24,14 +26,9 @@ export const getPublicPath = (BUILD_CONFIG: BUILD_CONFIG_TYPE) => {
     return '/';
   }
 
-  switch (BUILD_TYPE) {
-    case 'stable':
-      return 'https://cdn.plgames.example.com/prod/';
-    case 'beta':
-      return 'https://cdn.plgames.example.com/beta/';
-    default:
-      return 'https://cdn.plgames.example.com/dev/';
-  }
+  // Default to '/' for self-hosted deployments
+  // CDN can be configured via PUBLIC_PATH env var if needed
+  return '/';
 };
 
 const DESCRIPTION = `${BRAND.productName} merges docs, whiteboards, and tasks into one creator-first workspace.`;
