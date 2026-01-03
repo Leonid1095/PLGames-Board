@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Transactional } from '@nestjs-cls/transactional';
 import type { AiJobStatus as AiJobStatusType, AiJobType as AiJobTypeType } from '@prisma/client';
 import pkg from '@prisma/client';
-const { AiJobStatus, AiJobType } = pkg;
+const { AiJobStatus } = pkg;
 import type { ZodType } from 'zod';
 
 import { BaseModel } from './base';

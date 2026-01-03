@@ -95,7 +95,7 @@ export class IndexerJob {
     const docIdsInIndexerSet = new Set(docIdsInIndexer);
     // diff the docIdsInWorkspace and docIdsInIndexer, if the workspace is not indexed, all the docIdsInWorkspace should be indexed
     const missingDocIds = workspace.indexed
-      ? docIdsInWorkspace.filter(docId => !docIdsInIndexerSet.has(docId))
+      ? docIdsInWorkspace.filter((docId: string) => !docIdsInIndexerSet.has(docId))
       : docIdsInWorkspace;
     const deletedDocIds = docIdsInIndexer.filter(
       docId => !docIdsInWorkspaceSet.has(docId)

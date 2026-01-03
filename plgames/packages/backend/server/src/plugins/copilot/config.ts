@@ -73,20 +73,14 @@ defineModuleConfig('copilot', {
     },
     link: 'https://github.com/openai/openai-node',
   },
-  'providers.openrouter.apiKey': {
-    desc: 'The API key for OpenRouter.',
-    default: '',
-    env: 'AFFINE_COPILOT_OPENROUTER_API_KEY',
-  },
-  'providers.openrouter.baseURL': {
-    desc: 'The base URL for OpenRouter API.',
-    default: 'https://openrouter.ai/api/v1',
-    env: 'AFFINE_COPILOT_OPENROUTER_BASE_URL',
-  },
-  'providers.openrouter.model': {
-    desc: 'The default model to use for OpenRouter.',
-    default: 'openai/gpt-4o-mini',
-    env: 'AFFINE_COPILOT_OPENROUTER_MODEL',
+  'providers.openrouter': {
+    desc: 'The config for the OpenRouter provider.',
+    default: {
+      apiKey: '',
+      baseURL: 'https://openrouter.ai/api/v1',
+      model: 'openai/gpt-4o-mini',
+    },
+    link: 'https://openrouter.ai/',
   },
   'providers.fal': {
     desc: 'The config for the fal provider.',

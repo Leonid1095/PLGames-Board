@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Transactional } from '@nestjs-cls/transactional';
-import type { AiPromptRole as AiPromptRoleType, Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import pkg from '@prisma/client';
 const { AiPromptRole } = pkg;
 import { omit } from 'lodash-es';

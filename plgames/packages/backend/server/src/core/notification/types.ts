@@ -6,6 +6,10 @@ import {
   ObjectType,
   registerEnumType,
 } from '@nestjs/graphql';
+import type {
+  NotificationLevel as NotificationLevelPrismaType,
+  NotificationType as NotificationTypePrismaType,
+} from '@prisma/client';
 import { GraphQLJSONObject } from 'graphql-scalars';
 
 import { Paginated } from '../../base';
@@ -56,7 +60,7 @@ export abstract class BaseNotificationBodyType {
   @Field(() => NotificationType, {
     description: 'The type of the notification',
   })
-  type!: NotificationType;
+  type!: NotificationTypePrismaType;
 
   @Field(() => PublicUserType, {
     nullable: true,
@@ -155,12 +159,12 @@ export class NotificationObjectType implements Partial<Notification> {
   @Field(() => NotificationLevel, {
     description: 'The level of the notification',
   })
-  level!: NotificationLevel;
+  level!: NotificationLevelPrismaType;
 
   @Field(() => NotificationType, {
     description: 'The type of the notification',
   })
-  type!: NotificationType;
+  type!: NotificationTypePrismaType;
 
   @Field({ description: 'Whether the notification has been read' })
   read!: boolean;

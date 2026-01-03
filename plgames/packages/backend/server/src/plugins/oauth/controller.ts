@@ -10,8 +10,6 @@ import {
   Res,
 } from '@nestjs/common';
 import type { ConnectedAccount as ConnectedAccountType } from '@prisma/client';
-import pkg from '@prisma/client';
-const { ConnectedAccount } = pkg;
 import type { Request, Response } from 'express';
 
 import {

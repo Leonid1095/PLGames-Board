@@ -2,18 +2,14 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import {
   AISDKError,
   embedMany,
-  experimental_generateImage as generateImage,
   generateObject,
   generateText,
-  stepCountIs,
   streamText,
-  Tool,
 } from 'ai';
 import { z } from 'zod';
 
 import {
   CopilotPromptInvalid,
-  CopilotProviderNotSupported,
   CopilotProviderSideError,
   metrics,
   UserFriendlyError,
@@ -21,20 +17,15 @@ import {
 import { CopilotProvider } from './provider';
 import type {
   CopilotChatOptions,
-  CopilotChatTools,
   CopilotEmbeddingOptions,
-  CopilotImageOptions,
-  CopilotProviderModel,
   CopilotStructuredOptions,
   ModelConditions,
   PromptMessage,
-  StreamObject,
 } from './types';
 import { CopilotProviderType, ModelInputType, ModelOutputType } from './types';
 import {
   chatToGPTMessage,
   CitationParser,
-  StreamObjectParser,
   TextStreamParser,
 } from './utils';
 
@@ -346,8 +337,10 @@ export class OpenRouterProvider extends CopilotProvider<OpenRouterConfig> {
     try {
       metrics.ai.counter('generate_embedding_calls').add(1, { model: model.id });
 
+      const modelInstance = this.#instance.textEmbeddingModel(model.id);
+
       const { embeddings } = await embedMany({
-        model: this.#instance(model.id),
+        model: modelInstance,
         values: messages,
       });
 

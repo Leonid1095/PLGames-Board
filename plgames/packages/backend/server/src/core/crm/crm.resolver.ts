@@ -1,5 +1,5 @@
 import { Args, Field, ID, InputType, Int, Mutation, ObjectType, Parent, Query, registerEnumType, ResolveField, Resolver } from '@nestjs/graphql';
-import { ForbiddenException, Inject, UseGuards } from '@nestjs/common';
+import { ForbiddenException, Inject } from '@nestjs/common';
 import type { IssueStatus, IssuePriority, IssueType, PrismaClient as PrismaClientType } from '@prisma/client';
 import pkg from '@prisma/client';
 const { IssueStatus: IssueStatusEnum, IssuePriority: IssuePriorityEnum, IssueType: IssueTypeEnum, PrismaClient } = pkg;

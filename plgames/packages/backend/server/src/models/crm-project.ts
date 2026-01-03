@@ -3,10 +3,8 @@ import type { CrmProject, Prisma } from '@prisma/client';
 
 import { BaseModel } from './base';
 
-type CreateProjectInput = Omit<Prisma.CrmProjectCreateInput, 'workspace'> & {
-  workspaceId: string;
-};
-type UpdateProjectInput = Partial<CreateProjectInput>;
+type CreateProjectInput = Prisma.CrmProjectUncheckedCreateInput;
+type UpdateProjectInput = Prisma.CrmProjectUncheckedUpdateInput;
 
 @Injectable()
 export class CrmProjectModel extends BaseModel {

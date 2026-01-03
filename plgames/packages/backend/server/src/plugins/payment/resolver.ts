@@ -12,7 +12,7 @@ import {
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
-import type { User as UserType, PrismaClient as PrismaClientType, Provider as ProviderType } from '@prisma/client';
+import type { PrismaClient as PrismaClientType, Provider as ProviderType } from '@prisma/client';
 import pkg from '@prisma/client';
 const { Provider } = pkg;
 import { GraphQLJSONObject } from 'graphql-scalars';

@@ -1,15 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import type { CrmIssue, IssuePriority, IssueType, Prisma } from '@prisma/client';
+import type { CrmIssue, IssueStatus as IssueStatusType, Prisma } from '@prisma/client';
 import pkg from '@prisma/client';
 const { IssueStatus } = pkg;
 
 import { BaseModel } from './base';
 
-type CreateIssueInput = Omit<Prisma.CrmIssueCreateInput, 'project' | 'assignee' | 'reporter' | 'sprint'> & {
-  projectId: string;
-  reporterId: string;
-};
-type UpdateIssueInput = Partial<CreateIssueInput>;
+type CreateIssueInput = Prisma.CrmIssueUncheckedCreateInput;
+type UpdateIssueInput = Prisma.CrmIssueUncheckedUpdateInput;
 
 @Injectable()
 export class CrmIssueModel extends BaseModel {
@@ -34,7 +31,7 @@ export class CrmIssueModel extends BaseModel {
   }
 
   async getByProject(projectId: string, filters?: {
-    status?: IssueStatus;
+    status?: IssueStatusType;
     assigneeId?: string;
     sprintId?: string;
   }): Promise<CrmIssue[]> {
@@ -109,14 +106,14 @@ export class CrmIssueModel extends BaseModel {
     });
   }
 
-  async countByStatus(projectId: string): Promise<Record<IssueStatus, number>> {
+  async countByStatus(projectId: string): Promise<Record<IssueStatusType, number>> {
     const counts = await this.db.crmIssue.groupBy({
       by: ['status'],
       where: { projectId },
       _count: { status: true },
     });
 
-    const result: Record<IssueStatus, number> = {
+    const result: Record<IssueStatusType, number> = {
       [IssueStatus.BACKLOG]: 0,
       [IssueStatus.TODO]: 0,
       [IssueStatus.IN_PROGRESS]: 0,

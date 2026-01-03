@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Transactional } from '@nestjs-cls/transactional';
 import type { Prisma as PrismaNamespace, Workspace } from '@prisma/client';
-import pkg from '@prisma/client';
-const { Prisma } = pkg;
 
 import { EventBus } from '../base';
 import { BaseModel } from './base';

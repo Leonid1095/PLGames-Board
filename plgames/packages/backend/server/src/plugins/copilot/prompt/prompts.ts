@@ -1,7 +1,5 @@
 import { Logger } from '@nestjs/common';
 import type { AiPrompt as AiPromptType, PrismaClient as PrismaClientType } from '@prisma/client';
-import pkg from '@prisma/client';
-const { AiPrompt, PrismaClient } = pkg;
 
 import { PromptConfig, PromptMessage } from '../providers';
 
