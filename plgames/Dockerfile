@@ -74,6 +74,8 @@ RUN echo "Building @affine/reader..." && \
     echo "✓ @affine/server built"
 
 # Build frontend with timeout (max 30 minutes)
+# PUBLIC_PATH=/ ensures assets are loaded from the same origin instead of CDN
+ENV PUBLIC_PATH=/
 RUN timeout 1800 yarn plgames build -p @affine/web || \
     (echo "Frontend build timed out after 30 minutes" && exit 1)
 
