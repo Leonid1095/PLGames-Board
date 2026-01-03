@@ -11,6 +11,7 @@ import {
   parsePageDoc as parseDocToMarkdown,
   readAllBlocksFromDoc,
   readAllDocIdsFromRootDoc,
+  // @ts-expect-error - dist module may not be built yet
 } from '@affine/reader/dist';
 import { applyUpdate, Array as YArray, Doc as YDoc, Map as YMap } from 'yjs';
 

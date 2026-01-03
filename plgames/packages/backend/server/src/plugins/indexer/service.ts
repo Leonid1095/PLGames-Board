@@ -263,7 +263,7 @@ export class IndexerService {
     await this.deleteBlocksByDocId(workspaceId, docId, options);
     await this.write(
       SearchTable.block,
-      result.blocks.map(block => ({
+      result.blocks.map((block: (typeof result.blocks)[number]) => ({
         workspaceId,
         docId,
         blockId: block.blockId,
