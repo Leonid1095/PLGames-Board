@@ -26,7 +26,8 @@ import {
   ATTR_SERVICE_NAME,
   ATTR_SERVICE_VERSION,
 } from '@opentelemetry/semantic-conventions/incubating';
-import { PrismaInstrumentation } from '@prisma/instrumentation';
+import pkg from '@prisma/instrumentation';
+const { PrismaInstrumentation } = pkg;
 
 import { Config } from '../config';
 import { OnEvent } from '../event/def';
