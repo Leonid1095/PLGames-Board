@@ -62,8 +62,36 @@ yarn plgames server dev
 yarn dev
 ```
 
+## Changelog
+
+### 2026-01-03
+- **TypeScript fixes**: Resolved all TypeScript errors in CRM models and related backend code
+  - Fixed `CrmIssueModel` and `CrmProjectModel` to use `Prisma.UncheckedCreateInput/UpdateInput` types
+  - Fixed `IssueStatus` type references with proper Prisma type imports
+  - Fixed notification types (`NotificationType`, `NotificationLevel`) with correct Prisma type aliases
+  - Removed unused imports across resolvers and services
+  - Fixed OpenRouter provider embedding model configuration
+  - Fixed payment resolver duplicate `UserType` identifier
+
+### 2025-12-28
+- **CRM Backend**: Initial implementation of CRM models, services, and GraphQL resolvers
+- **Prisma Schema**: Added `CrmProject`, `CrmIssue`, `CrmSprint`, `CrmComment`, `CrmTimeLog` models
+- **Deployment Guide**: Created comprehensive deployment documentation (`DEPLOYMENT_GUIDE.md`)
+
 ## Roadmap
 
+### Completed ✅
+- [x] CRM data models (Projects, Issues, Sprints, Comments, Time Logs)
+- [x] Backend services and GraphQL resolvers
+- [x] TypeScript type safety improvements
+- [x] Deployment documentation
+
+### In Progress 🔄
+- [ ] Kanban board frontend component
+- [ ] Issue drawer/detail view
+- [ ] Sprint management UI
+
+### Planned 📋
 - Advanced workflows: custom statuses, transitions, automations.
 - Reports: burndown charts, velocity, SLA dashboards.
 - Integrations: webhooks, issue import/export.
