@@ -50,6 +50,14 @@ COPY --from=builder /app/packages/backend/server/package.json ./package.json
 # Copy native modules if they are not in node_modules (depending on how they are built)
 # Usually they are in node_modules after install
 
+# Create stub static files for selfhosted mode
+# In our architecture, frontend is served by Caddy container, not backend
+# But backend's StaticFilesResolver still expects these files to exist
+RUN mkdir -p static/admin static/mobile && \
+    echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=/"></head></html>' > static/selfhost.html && \
+    echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=/"></head></html>' > static/admin/selfhost.html && \
+    echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=/"></head></html>' > static/mobile/selfhost.html
+
 ENV NODE_ENV=production
 ENV PORT=3010
 
