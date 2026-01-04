@@ -43,7 +43,7 @@ export const getOrCreateI18n = (): i18n => {
         lng: defaultLng,
         fallbackLng: code => {
           // always fallback to english
-          const fallbacks: string[] = [defaultLng];
+          const fallbacks: string[] = ['en'];
           const langPart = code.split('-')[0];
 
           // fallback xx-YY to xx, e.g. es-AR to es
@@ -62,11 +62,8 @@ export const getOrCreateI18n = (): i18n => {
         supportedLngs: Object.keys(SUPPORTED_LANGUAGES),
         debug: false,
         partialBundledLanguages: true,
-        resources: {
-          [defaultLng]: {
-            translation: SUPPORTED_LANGUAGES[defaultLng].resource,
-          },
-        },
+        // Don't bundle resources here - let the backend load them
+        // Russian and other languages use lazy loading functions
         postProcess: ['branding'],
         interpolation: {
           escapeValue: false, // not needed for react as it escapes by default
