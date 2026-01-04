@@ -2,14 +2,23 @@
     root * /usr/share/caddy
     encode gzip
 
-    # Proxy API requests to backend
-    reverse_proxy /api/* backend:3010
-    reverse_proxy /graphql backend:3010
-    reverse_proxy /socket.io/* backend:3010
+    # Proxy API requests to backend BEFORE file_server
+    # Using handle blocks to ensure proper routing order
+    handle /api/* {
+        reverse_proxy backend:3010
+    }
 
-    # Serve static files
-    file_server
+    handle /graphql {
+        reverse_proxy backend:3010
+    }
 
-    # SPA fallback
-    try_files {path} /index.html
+    handle /socket.io/* {
+        reverse_proxy backend:3010
+    }
+
+    # Handle all other requests - static files with SPA fallback
+    handle {
+        try_files {path} /index.html
+        file_server
+    }
 }
